@@ -3,11 +3,13 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:SSME="clr-namespace:Microsoft.Web.Media.SmoothStreaming;assembly=Microsoft.Web.Media.SmoothStreaming"
     mc:Ignorable="d"
     d:DesignHeight="300" d:DesignWidth="400">
 
     <Grid x:Name="LayoutRoot" Background="White">
-        <MediaElement Name="media" Grid.Column="0" Grid.Row="0" ></MediaElement>
+        <MediaElement Name="progressive_media" Grid.Column="0" Grid.Row="0"  ></MediaElement>
+        <SSME:SmoothStreamingMediaElement Name="SmoothStream_media" Grid.Row="0" AutoPlay="True"></SSME:SmoothStreamingMediaElement>
         <TextBox Name="tb_debug"></TextBox>
     </Grid>
 </UserControl>

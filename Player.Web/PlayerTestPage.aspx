@@ -80,7 +80,7 @@
 		  <param name="minRuntimeVersion" value="5.0.61118.0" />
           <param name="onLoad" value="pluginLoaded" />
 		  <param name="autoUpgrade" value="true" />
-          <param name="initParams" value="playerId=kplayer,entryURL=http://clips.vorwaerts-gmbh.de/VfE_html5.mp4,autoplay=true,jsCallBackReadyFunc=ready" />
+          <param name="initParams" value="smoothStreamPlayer=true,debug=true,autoplay=true,licenseURL=http://playready.directtaps.net/pr/svc/rightsmanager.asmx?PlayRight=1&UseSimpleNonPersistentLicense=1,playerId=kplayer,entryURL=http://playready.directtaps.net/smoothstreaming/SSWSS720H264PR/SuperSpeedway_720.ism/Manifest,jsCallBackReadyFunc=ready" />
 
 		  <a href="http://go.microsoft.com/fwlink/?LinkID=149156&v=5.0.61118.0" style="text-decoration:none">
  			  <img src="http://go.microsoft.com/fwlink/?LinkId=161376" alt="Get Microsoft Silverlight" style="border-style:none"/>

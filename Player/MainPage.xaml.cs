@@ -40,12 +40,20 @@ namespace Player
         private Dictionary<String, List<String>> mapJSBindings = new Dictionary<string, List<String>>();
         private double _bufferedTime;
         private double _bufferedBytes;
+        private string _licenseURL;
+        private string _challengeCustomData;
+        private bool _enableSmoothStreamPlayer;
+        private bool _enableMultiCastPlayer;
+
+        private IMediaElement media = null;
        
         public MainPage(IDictionary<string, string> initParams)
         {
             InitializeComponent();
 
             HandleInitParams(initParams);
+
+            ChoosePlayer();
 
             HtmlPage.RegisterScriptableObject("MediaElementJS", this);
 
@@ -57,14 +65,37 @@ namespace Player
 
             InitMedia();
 
-            try
+            if (!String.IsNullOrEmpty(_readyCallBack))
             {
-                HtmlPage.Window.Eval(String.Format("{0}('{1}')",_readyCallBack,_playerId));
+                try
+                {
+                    HtmlPage.Window.Eval(String.Format("{0}('{1}')", _readyCallBack, _playerId));
+                }
+                catch (Exception e)
+                {
+                    WriteDebug("Error occur while trying to call readyCallBack function:" + e.Message);
+                }
             }
-            catch(Exception e) 
+          
+        }
+
+        private void ChoosePlayer()
+        {
+            progressive_media.Visibility =  System.Windows.Visibility.Collapsed;
+            SmoothStream_media.Visibility = System.Windows.Visibility.Collapsed;
+            if (_enableSmoothStreamPlayer)
             {
-                WriteDebug("Error occur while trying to call readyCallBack function:" + e.Message);
+                SmoothStream_media.Visibility = System.Windows.Visibility.Visible;
+                media = new SmoothStreamingElement(SmoothStream_media);
+                return;
             }
+            if (_enableMultiCastPlayer)
+            {
+                throw new Exception("TODO!!!");
+                return;
+            }
+            progressive_media.Visibility = System.Windows.Visibility.Visible;
+            media = new ProgressiveMediaElement(progressive_media);
         }
 
         /// <summary>
@@ -104,6 +135,7 @@ namespace Player
             _timer.Interval = new TimeSpan(0, 0, 0, 0, _timerRate); // 200 Milliseconds 
             _timer.Tick += _timer_Tick;
             _timer.Stop();
+            
         }
 
         
@@ -113,14 +145,24 @@ namespace Player
         /// <param name="initParams"></param>
         private void HandleInitParams(IDictionary<string, string> initParams)
         {
+            if (initParams.ContainsKey("licenseURL"))
+                _licenseURL = initParams["licenseURL"];
+
+            if (initParams.ContainsKey("challengeCustomData"))
+                _challengeCustomData = initParams["challengeCustomData"];
+
             if (initParams.ContainsKey("playerId"))
                 _playerId = initParams["playerId"];
+
             if (initParams.ContainsKey("entryURL"))
                 _mediaUrl = initParams["entryURL"];
+
             if (initParams.ContainsKey("autoplay") && initParams["autoplay"] == "true")
                 _autoplay = true;
+
             if (initParams.ContainsKey("debug") && initParams["debug"] == "true")
                 _debug = true;
+
             if (initParams.ContainsKey("preload"))
                 _preload = initParams["preload"].ToLower();
             else
@@ -143,15 +185,25 @@ namespace Player
 
             if (initParams.ContainsKey("width"))
                 Int32.TryParse(initParams["width"], out _width);
+
             if (initParams.ContainsKey("height"))
                 Int32.TryParse(initParams["height"], out _height);
+
             if (initParams.ContainsKey("timerate"))
                 Int32.TryParse(initParams["timerrate"], out _timerRate);
+
             if (initParams.ContainsKey("startvolume"))
                 Double.TryParse(initParams["startvolume"], out _volume);
-            
 
- 
+            if (initParams.ContainsKey("smoothStreamPlayer"))
+            {
+                _enableSmoothStreamPlayer = true;
+            }
+
+            if (initParams.ContainsKey("multicastPlayer"))
+            {
+                _enableMultiCastPlayer = true;
+            }
         }
 
         /// <summary>
@@ -228,21 +280,23 @@ namespace Player
         #region media events
         void media_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            switch (media.CurrentState)
             {
-                case MediaElementState.Playing:
-                    pauseMedia();
-                    break;
+                switch (media.CurrentState)
+                {
+                    case MediaElementState.Playing:
+                        pauseMedia();
+                        break;
 
-                case MediaElementState.Paused:
-                    playMedia();
-                    break;
-                case MediaElementState.Stopped:
+                    case MediaElementState.Paused:
+                        playMedia();
+                        break;
+                    case MediaElementState.Stopped:
 
-                    break;
-                case MediaElementState.Buffering:
-                    pauseMedia();
-                    break;
+                        break;
+                    case MediaElementState.Buffering:
+                        pauseMedia();
+                        break;
+                }
             }
         }
         void _timer_Tick(object sender, EventArgs e)
@@ -257,6 +311,7 @@ namespace Player
 
         void media_MediaFailed(object sender, ExceptionRoutedEventArgs e)
         {
+            WriteDebug(e.ErrorException.Message);
             SendEvent("alert", e.ErrorException.Message);
         }
 
@@ -409,7 +464,22 @@ namespace Player
 
             WriteDebug("method:load " + media.CurrentState);
             WriteDebug(" - " + _mediaUrl.ToString());
+            if (!String.IsNullOrEmpty(_licenseURL))
+            {
+                media.LicenseAcquirer = new LicenseAcquirer();
 
+                // Set the License URI to proper License Server address.
+                /*partnerId - mandatory
+                ks - mandatory
+                entryId  - optional
+                referrer – optional*/
+                if (!String.IsNullOrEmpty(_challengeCustomData))
+                {
+                    media.LicenseAcquirer.ChallengeCustomData = _challengeCustomData;
+                }
+
+                media.LicenseAcquirer.LicenseServerUriOverride = new Uri(_licenseURL, UriKind.Absolute);
+            }
             media.Source = new Uri(_mediaUrl, UriKind.Absolute);
         }
 

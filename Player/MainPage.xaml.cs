@@ -46,6 +46,7 @@ namespace Player
         private bool _enableMultiCastPlayer;
 
         private IMediaElement media = null;
+        private string _ip;
        
         public MainPage(IDictionary<string, string> initParams)
         {
@@ -87,15 +88,21 @@ namespace Player
             {
                 SmoothStream_media.Visibility = System.Windows.Visibility.Visible;
                 media = new SmoothStreamingElement(SmoothStream_media);
+                WriteDebug("ChoosePlayer : SmoothStream player");
                 return;
             }
             if (_enableMultiCastPlayer)
             {
-                throw new Exception("TODO!!!");
+                progressive_media.Visibility = System.Windows.Visibility.Visible;
+                media = new MulticastPlayer(progressive_media, _ip);
+                WriteDebug("ChoosePlayer : MultiCast player");
                 return;
             }
+
+            //default
             progressive_media.Visibility = System.Windows.Visibility.Visible;
             media = new ProgressiveMediaElement(progressive_media);
+            WriteDebug("ChoosePlayer : Progressive download player");
         }
 
         /// <summary>
@@ -203,7 +210,12 @@ namespace Player
             if (initParams.ContainsKey("multicastPlayer"))
             {
                 _enableMultiCastPlayer = true;
+                if (initParams.ContainsKey("streamAddress"))
+                {
+                    _ip = initParams["streamAddress"];
+                }
             }
+
         }
 
         /// <summary>
@@ -463,7 +475,10 @@ namespace Player
             _firedCanPlay = false;
 
             WriteDebug("method:load " + media.CurrentState);
-            WriteDebug(" - " + _mediaUrl.ToString());
+            if (!String.IsNullOrEmpty(_mediaUrl))
+            {
+                WriteDebug(" - " + _mediaUrl.ToString());
+            }
             if (!String.IsNullOrEmpty(_licenseURL))
             {
                 media.LicenseAcquirer = new LicenseAcquirer();

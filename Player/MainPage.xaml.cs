@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Web.Media.SmoothStreaming;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -230,6 +231,7 @@ namespace Player
             media.MediaEnded += media_MediaEnded;
             media.MediaFailed += media_MediaFailed;
             media.MediaOpened += media_MediaOpened;
+     
           //  media.MouseLeftButtonDown += media_MouseLeftButtonDown;
 
             if (!_disableOnScreenClick)
@@ -271,7 +273,6 @@ namespace Player
 							'volumeChanged': 'onVolumeChanged'
 						};
              */
-
             if (mapJSBindings.Keys.Contains(eventName))
             {
                 WriteDebug(String.Format("Trigger {0} with param {1}", eventName, param));
@@ -331,6 +332,7 @@ namespace Player
         {
             SendEvent("playerPlayEnd");
         }
+
 
         void media_CurrentStateChanged(object sender, RoutedEventArgs e)
         {
@@ -420,7 +422,7 @@ namespace Player
         [ScriptableMember]
         public void removeJsListener(string bindName, string callback)
         {
-            if (mapJSBindings.ContainsKey(bindName) != null )
+            if ( mapJSBindings.ContainsKey(bindName) )
             {
                 mapJSBindings[bindName].Remove(callback);
             }
@@ -435,7 +437,7 @@ namespace Player
             WriteDebug("method:play " + media.CurrentState);
 
             // sometimes people forget to call load() first
-            if (_mediaUrl != "" && media.Source == null)
+            if (media.CurrentState == MediaElementState.Closed || (_mediaUrl != "" && media.Source == null))
             {
                 _isAttemptingToPlay = true;
                 loadMedia();
@@ -447,7 +449,6 @@ namespace Player
                 WriteDebug("storing _isAttemptingToPlay ");
                 _isAttemptingToPlay = true;
             }
-
             media.Play();
             _isEnded = false;
             _isPaused = false;
@@ -563,6 +564,8 @@ namespace Player
             this.Width = media.Width = width;
             this.Height = media.Height = height;
         }
+
+
         #endregion
 
 

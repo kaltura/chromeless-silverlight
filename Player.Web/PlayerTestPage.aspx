@@ -66,28 +66,52 @@
             
         }
         function playing() {
-            alert("xxx");
+           // alert("xxx");
+        }
+
+        function changeIndex() {
+            slCtl.Content.MediaElementJS.selectTrack(1);
+        }
+        function play() {
+            slCtl.Content.MediaElementJS.playMedia();
         }
     </script>
 </head>
 <body>
+    <div><Button onClick="changeIndex()">set stream index</Button></div>
+      <div><Button onClick="play()">Play</Button></div>
+
     <form id="form1" runat="server" style="height:100%">
     <div id="silverlightControlHost">
-        <!--object id="kplayer" data="data:application/x-silverlight-2," type="application/x-silverlight-2" width="100%" height="100%">
+        <object id="kplayer" data="data:application/x-silverlight-2," type="application/x-silverlight-2" width="400" height="330">
 		  <param name="source" value="ClientBin/Player.xap"/>
 		  <param name="onError" value="onSilverlightError" />
 		  <param name="background" value="white" />
 		  <param name="minRuntimeVersion" value="5.0.61118.0" />
           <param name="onLoad" value="pluginLoaded" />
 		  <param name="autoUpgrade" value="true" />
-          <param name="initParams" value="smoothStreamPlayer=true,debug=true,autoplay=true,licenseURL=http://playready.directtaps.net/pr/svc/rightsmanager.asmx?PlayRight=1&UseSimpleNonPersistentLicense=1,playerId=kplayer,entryURL=http://playready.directtaps.net/smoothstreaming/SSWSS720H264PR/SuperSpeedway_720.ism/Manifest,jsCallBackReadyFunc=ready" />
+          <param name="initParams" value="debug=true,smoothStreamPlayer=true,playerId=kplayer,entryURL=http://playready.directtaps.net/smoothstreaming/TTLSS720VC1/To_The_Limit_720.ism/Manifest" />
+
+		  <a href="http://go.microsoft.com/fwlink/?LinkID=149156&v=5.0.61118.0" style="text-decoration:none">
+ 			  <img src="http://go.microsoft.com/fwlink/?LinkId=161376" alt="Get Microsoft Silverlight" style="border-style:none"/>
+		  </a>
+	    </object><iframe id="_sl_historyFrame" style="visibility:hidden;height:0px;width:0px;border:0px"></iframe></div>
+
+                <!--object id="kplayer" data="data:application/x-silverlight-2," type="application/x-silverlight-2" width="400" height="330">
+		  <param name="source" value="ClientBin/Player.xap"/>
+		  <param name="onError" value="onSilverlightError" />
+		  <param name="background" value="black" />
+		  <param name="minRuntimeVersion" value="5.0.61118.0" />
+          <param name="onLoad" value="pluginLoaded" />
+		  <param name="autoUpgrade" value="true" />
+          <param name="initParams" value="entryURL=http://cdnapi.kaltura.com/p/524241/sp/52424100/playManifest/entryId/0_8zzalxul/flavorId/0_3ob6cr7c/format/url/protocol/http/a.mp4,autoplay=true,playerId=kplayer" />
 
 		  <a href="http://go.microsoft.com/fwlink/?LinkID=149156&v=5.0.61118.0" style="text-decoration:none">
  			  <img src="http://go.microsoft.com/fwlink/?LinkId=161376" alt="Get Microsoft Silverlight" style="border-style:none"/>
 		  </a>
 	    </!--object><iframe id="_sl_historyFrame" style="visibility:hidden;height:0px;width:0px;border:0px"></iframe></div-->
    
-         <object id="kplayer" data="data:application/x-silverlight-2," type="application/x-silverlight-2" width="100%" height="100%">
+         <!--object id="kplayer" data="data:application/x-silverlight-2," type="application/x-silverlight-2" width="100%" height="100%">
 		  <param name="source" value="ClientBin/Player.xap"/>
 		  <param name="onError" value="onSilverlightError" />
 		  <param name="background" value="white" />
@@ -99,7 +123,7 @@
 		  <a href="http://go.microsoft.com/fwlink/?LinkID=149156&v=5.0.61118.0" style="text-decoration:none">
  			  <img src="http://go.microsoft.com/fwlink/?LinkId=161376" alt="Get Microsoft Silverlight" style="border-style:none"/>
 		  </a>
-	    </object><iframe id="_sl_historyFrame" style="visibility:hidden;height:0px;width:0px;border:0px"></iframe></div>
+	    </object><iframe id="_sl_historyFrame" style="visibility:hidden;height:0px;width:0px;border:0px"></iframe></div-->
  
         
          </form>

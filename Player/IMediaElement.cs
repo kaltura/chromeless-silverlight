@@ -53,6 +53,8 @@ namespace Player
 
          event  EventHandler<MouseButtonEventArgs> MouseLeftButtonUp;
 
+         event EventHandler<ManifestEventArgs> BitratesReady;
+
 
 
 

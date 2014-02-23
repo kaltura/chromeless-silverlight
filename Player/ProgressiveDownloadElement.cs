@@ -250,5 +250,6 @@ namespace Player
             }
         }
         #endregion
+        public event EventHandler<ManifestEventArgs> BitratesReady;
     }
 }

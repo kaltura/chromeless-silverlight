@@ -1,5 +1,6 @@
 ﻿using Microsoft.Web.Media.SmoothStreaming;
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Windows;
 using System.Windows.Controls;
@@ -9,6 +10,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
+using System.Linq;
 
 namespace Player
 {
@@ -16,6 +18,8 @@ namespace Player
     {
         public SmoothStreamingMediaElement element { get; set; }
 
+        private StreamInfo playingStream;
+        private List<TrackInfo> tracks;
         public SmoothStreamingElement(SmoothStreamingMediaElement element)
         {
             this.element = element;
@@ -28,7 +32,28 @@ namespace Player
             this.element.MediaOpened += element_MediaOpened;
             this.element.MouseLeftButtonUp += element_MouseLeftButtonUp;
 
+             this.element.PlaybackTrackChanged += element_PlaybackTrackChanged;
+            this.element.ManifestReady += element_ManifestReady;
+
         }
+
+        public void selectTrack(int trackIndex)
+        {
+            if (this.playingStream!=null)
+            {
+                TrackInfo selected = this.tracks[trackIndex];
+                IList<TrackInfo> selectedList = new List<TrackInfo>();
+                selectedList.Add(selected);
+                this.playingStream.SelectTracks(selectedList, false);
+            }
+        }
+
+
+        void element_PlaybackTrackChanged(object sender, TrackChangedEventArgs e)
+        {
+            //
+        }
+
         #region IMediaElement implementation
 
         public event EventHandler<RoutedEventArgs> CurrentStateChanged;
@@ -45,7 +70,8 @@ namespace Player
 
         public event EventHandler<MouseButtonEventArgs> MouseLeftButtonUp;
 
-       
+        public event EventHandler<ManifestEventArgs> BitratesReady;
+   
 
         void element_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
@@ -53,6 +79,35 @@ namespace Player
             {
                 MouseLeftButtonUp(sender, e);
             }
+        }
+
+        void element_ManifestReady(object sender, EventArgs e)
+        {
+            foreach (SegmentInfo segment in this.element.ManifestInfo.Segments)
+            {
+                IList<StreamInfo> streamInfoList = segment.AvailableStreams;
+                foreach (StreamInfo stream in streamInfoList)
+                {
+                    if (stream.Type == MediaStreamType.Video)
+                    {
+                        this.playingStream = stream;
+                        this.tracks = stream.AvailableTracks.ToList<TrackInfo>();
+
+                        ManifestEventArgs args = new ManifestEventArgs( this.tracks );
+                        BitratesReady(this, args);
+
+                        
+                        // Limit bit-rate to 866000.
+                        /* ulong highRate = 866000 + 1;
+                            List<TrackInfo> tracks = new List<TrackInfo>();
+
+                            tracks = ;
+                            IList<TrackInfo> allowedTracks = tracks.Where((ti) => ti.Bitrate < highRate).ToList();
+                            stream.SelectTracks(allowedTracks, false);*/
+                    }
+                }
+            }
+        
         }
 
         void element_MediaOpened(object sender, RoutedEventArgs e)
@@ -201,11 +256,6 @@ namespace Player
                 element.Height = value;
             }
         }
-
-
-       
-
-
 
         public MediaElementState CurrentState
         {

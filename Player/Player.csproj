@@ -81,6 +81,8 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
+    <Compile Include="FlavorObject.cs" />
+    <Compile Include="ManifestEventArgs.cs" />
     <Compile Include="IMediaElement.cs" />
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>

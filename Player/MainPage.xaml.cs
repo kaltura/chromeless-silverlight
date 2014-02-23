@@ -14,6 +14,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 
+
 namespace Player
 {
     [ScriptableType]
@@ -231,6 +232,7 @@ namespace Player
             media.MediaEnded += media_MediaEnded;
             media.MediaFailed += media_MediaFailed;
             media.MediaOpened += media_MediaOpened;
+            media.BitratesReady += media_BitratesReady;
      
           //  media.MouseLeftButtonDown += media_MouseLeftButtonDown;
 
@@ -333,6 +335,12 @@ namespace Player
             SendEvent("playerPlayEnd");
         }
 
+        void play_timer_tick(object sender, EventArgs e)
+        {
+            ((DispatcherTimer)sender).Stop();
+            this.playMedia();
+        }
+
 
         void media_CurrentStateChanged(object sender, RoutedEventArgs e)
         {
@@ -361,14 +369,20 @@ namespace Player
 
                     // special settings to allow play() to work
                     _isLoading = false;
+                    StopTimer();
                     WriteDebug("paused event, " + _isAttemptingToPlay);
                     if (_isAttemptingToPlay)
                     {
-                        this.playMedia();
+                        System.Windows.Threading.DispatcherTimer playTimer = new System.Windows.Threading.DispatcherTimer();
+                        playTimer.Interval = new TimeSpan(0, 0, 0, 0, 300);
+                        playTimer.Tick += play_timer_tick; 
+                        playTimer.Start();
                     }
-
-                    StopTimer();
-                    SendEvent("playerPaused");
+                    else
+                    {
+                        SendEvent("playerPaused");
+                    }
+            
                     break;
                 case MediaElementState.Stopped:
                     _isEnded = false;
@@ -405,6 +419,21 @@ namespace Player
 
             SendEvent("progress");
         }
+
+        void media_BitratesReady(object sender, ManifestEventArgs e)
+        {
+            List<TrackInfo> tracks = e.Flavors;
+            if (tracks != null)
+            {
+                var flavors = new object[tracks.Count];
+                for (int i = 0; i < flavors.Length; i++ )
+                {
+                    flavors[i] = new FlavorObject("video", i, (int)tracks.ElementAt(i).Bitrate * 8, 0);
+                }
+            }
+            //TODO notify js on bitrates list  
+        }
+
         #endregion
 
         #region JS Interface
@@ -449,9 +478,13 @@ namespace Player
                 WriteDebug("storing _isAttemptingToPlay ");
                 _isAttemptingToPlay = true;
             }
-            media.Play();
-            _isEnded = false;
-            _isPaused = false;
+            else
+            {
+                media.Play();
+                _isEnded = false;
+                _isPaused = false;
+            }
+
      
 
         }
@@ -565,7 +598,15 @@ namespace Player
             this.Height = media.Height = height;
         }
 
+        [ScriptableMember]
+        public void selectTrack(int trackIndex)
+        {
+            if (media is SmoothStreamingElement)
+            {
+                (media as SmoothStreamingElement).selectTrack(trackIndex);
+            }
 
+        }
         #endregion
 
 

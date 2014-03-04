@@ -51,7 +51,16 @@ namespace Player
 
         void element_PlaybackTrackChanged(object sender, TrackChangedEventArgs e)
         {
-            //
+            SourceEventArgs args; 
+            for (int i = 0; i < this.tracks.Count; i++)
+            {
+                if (this.tracks[i].Bitrate == e.NewTrack.Bitrate)
+                {
+                    args = new SourceEventArgs(i);
+                    SourceChanged(this, args);
+                    break;
+                }
+            }      
         }
 
         #region IMediaElement implementation
@@ -71,6 +80,8 @@ namespace Player
         public event EventHandler<MouseButtonEventArgs> MouseLeftButtonUp;
 
         public event EventHandler<ManifestEventArgs> BitratesReady;
+
+        public event EventHandler<SourceEventArgs> SourceChanged;
    
 
         void element_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)

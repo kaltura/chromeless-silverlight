@@ -104,6 +104,7 @@ namespace Player
             //default
             progressive_media.Visibility = System.Windows.Visibility.Visible;
             media = new ProgressiveMediaElement(progressive_media);
+
             WriteDebug("ChoosePlayer : Progressive download player");
         }
 
@@ -233,6 +234,7 @@ namespace Player
             media.MediaFailed += media_MediaFailed;
             media.MediaOpened += media_MediaOpened;
             media.BitratesReady += media_BitratesReady;
+            media.SourceChanged += media_SourceChanged;
      
           //  media.MouseLeftButtonDown += media_MouseLeftButtonDown;
 
@@ -423,15 +425,26 @@ namespace Player
         void media_BitratesReady(object sender, ManifestEventArgs e)
         {
             List<TrackInfo> tracks = e.Flavors;
+            String bitrates = "";
             if (tracks != null)
             {
-                var flavors = new object[tracks.Count];
-                for (int i = 0; i < flavors.Length; i++ )
+                for (int i = 0; i < tracks.Count; i++)
                 {
-                    flavors[i] = new FlavorObject("video", i, (int)tracks.ElementAt(i).Bitrate * 8, 0);
+                    bitrates += "{\"type\":\"video/ism\",\"assetid\":" + "\"ism_" + i + "\""+ ",\"bandwidth\":" + tracks.ElementAt(i).Bitrate + ",\"height\":0}";
+                    if (i < tracks.Count - 1)
+                    {
+                        bitrates += ",";
+                    }
                 }
             }
-            //TODO notify js on bitrates list  
+
+            bitrates = "{\"flavors\":[" + bitrates + "]}";
+            SendEvent("flavorsListChanged", bitrates);
+        }
+
+        void media_SourceChanged(object sender, SourceEventArgs e)
+        {
+            SendEvent("switchingChangeComplete", "{\"newIndex\":" + e.NewIndex + "}");
         }
 
         #endregion
@@ -603,7 +616,7 @@ namespace Player
         {
             if (media is SmoothStreamingElement)
             {
-                (media as SmoothStreamingElement).selectTrack(trackIndex);
+                (media as SmoothStreamingElement).selectTrack( trackIndex );
             }
 
         }

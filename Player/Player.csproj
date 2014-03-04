@@ -81,7 +81,6 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
-    <Compile Include="FlavorObject.cs" />
     <Compile Include="ManifestEventArgs.cs" />
     <Compile Include="IMediaElement.cs" />
     <Compile Include="MainPage.xaml.cs">
@@ -91,6 +90,7 @@
     <Compile Include="ProgressiveDownloadElement.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SmoothStreamingElement.cs" />
+    <Compile Include="SourceEventArgs.cs" />
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml">

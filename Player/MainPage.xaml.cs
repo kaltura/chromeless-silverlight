@@ -476,10 +476,10 @@ namespace Player
         [ScriptableMember]
         public void playMedia()
         {
-            WriteDebug("method:play " + media.CurrentState);
+            WriteDebug("method:play " + media.CurrentState );
 
             // sometimes people forget to call load() first
-            if (media.CurrentState == MediaElementState.Closed || (_mediaUrl != "" && media.Source == null))
+            if (!_enableMultiCastPlayer && (media.CurrentState == MediaElementState.Closed || (_mediaUrl != "" && media.Source == null)))
             {
                 _isAttemptingToPlay = true;
                 loadMedia();

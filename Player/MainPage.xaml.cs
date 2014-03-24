@@ -59,6 +59,10 @@ namespace Player
             ChoosePlayer();
 
             HtmlPage.RegisterScriptableObject("MediaElementJS", this);
+            if ( initParams.ContainsKey("onLoaded") ) {
+                HtmlPage.Window.Invoke( initParams["onLoaded"] );
+            }
+           
 
             RegisterMediaEvents();
 

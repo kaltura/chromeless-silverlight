@@ -550,6 +550,16 @@ namespace Player
         }
 
         [ScriptableMember]
+        public void reloadMedia()
+        {
+            WriteDebug("method:reloadMedia " + media.CurrentState);
+            if (_enableMultiCastPlayer)
+            {
+                media = new MulticastPlayer(progressive_media, _ip);
+            }
+        }
+
+        [ScriptableMember]
         public void stopMedia()
         {
             WriteDebug("method:stop " + media.CurrentState);

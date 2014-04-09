@@ -33,6 +33,11 @@ namespace Player
             this.receiver.init(param);
         }
 
+        public void stretchFill()
+        {
+            this.element.Stretch = Stretch.Fill;
+        }
+
         void receiver_ReceivedFirstPacket()
         {
         }

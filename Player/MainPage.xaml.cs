@@ -634,6 +634,16 @@ namespace Player
             }
 
         }
+
+        [ScriptableMember]
+        public void stretchFill() 
+        {
+            if (media is MulticastPlayer)
+            {
+                (media as MulticastPlayer).stretchFill();
+            }
+
+        }
         #endregion
 
 

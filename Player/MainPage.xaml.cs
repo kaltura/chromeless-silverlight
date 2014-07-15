@@ -437,7 +437,7 @@ namespace Player
                 for (int i = 0; i < tracks.Count; i++)
                 {
                     ((StreamInfo)tracks.ElementAt(i)).Attributes.TryGetValue("Name", out langName);
-                    languages += "{\"name\":" + langName + ",\"index\":" + i + "}";
+                    languages += "{\"name\":\"" + langName + "\",\"index\":" + i + "}";
                     if (i < tracks.Count - 1)
                     {
                         languages += ",";
@@ -447,6 +447,8 @@ namespace Player
 
             languages = "{\"languages\":[" + languages + "]}";
             SendEvent("audioTracksReceived", languages);
+            //notify default audio index
+            SendEvent("audioTrackSelected", "{\"index\":" + (media as SmoothStreamingElement).getCurrentAudioIndex() + "}");
         }
 
         void media_BitratesReady(object sender, ManifestEventArgs e)
@@ -498,8 +500,6 @@ namespace Player
            
         }
 
-       
-
         [ScriptableMember]
         public void playMedia()
         {
@@ -524,8 +524,6 @@ namespace Player
                 _isEnded = false;
                 _isPaused = false;
             }
-
-     
 
         }
 
@@ -663,7 +661,7 @@ namespace Player
         {
             if (media is SmoothStreamingElement)
             {
-                (media as SmoothStreamingElement).selectAudioTrack(trackIndex);     
+                (media as SmoothStreamingElement).selectAudioTrack(trackIndex);    
                 SendEvent("audioTrackSelected", "{\"index\":" + (media as SmoothStreamingElement).getCurrentAudioIndex() + "}");
             }
         }

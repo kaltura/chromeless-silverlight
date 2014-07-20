@@ -59,6 +59,9 @@
             slCtl = sender.getHost();
             slCtl.Content.MediaElementJS.addJsListener("playerPlayed", "playing");
             slCtl.Content.MediaElementJS.addJsListener("flavorsListChanged", "listing");
+            slCtl.Content.MediaElementJS.addJsListener("audioTracksReceived", "audios");
+            slCtl.Content.MediaElementJS.addJsListener("audioTrackSelected", "audioSelected");
+
            
         }
         function ready(playerId) {
@@ -67,6 +70,13 @@
             
         }
         function listing(data) {
+            alert(data);
+        }
+        function audioSelected(data) {
+            alert("selected: " + data);
+        }
+
+        function audios(data) {
             alert(data);
         }
         function playing() {
@@ -79,11 +89,24 @@
         function play() {
             slCtl.Content.MediaElementJS.playMedia();
         }
+        function changeAudio0() {
+            slCtl.Content.MediaElementJS.selectAudioTrack(0);
+        }
+       
+        function changeAudio1() {
+            slCtl.Content.MediaElementJS.selectAudioTrack(1);
+        }
+        function changeAudio2() {
+            slCtl.Content.MediaElementJS.selectAudioTrack(2);
+        }
     </script>
 </head>
 <body>
     <div><Button onClick="changeIndex()">set stream index</Button></div>
-      <div><Button onClick="play()">Play</Button></div>
+     <div><Button onClick="play()">Play</Button></div>
+     <div><Button onClick="changeAudio0()">Change Audio0</Button></div>
+     <div><Button onClick="changeAudio1()">Change Audio1</Button></div>
+     <div><Button onClick="changeAudio2()">Change Audio2</Button></div>
 
     <form id="form1" runat="server" style="height:100%">
     <div id="silverlightControlHost">
@@ -95,7 +118,8 @@
 		  <param name="minRuntimeVersion" value="5.0.61118.0" />
           <param name="onLoad" value="pluginLoaded" />
 		  <param name="autoUpgrade" value="true" />
-          <param name="initParams" value="autoplay=true,smoothStreamPlayer=true,playerId=kplayer,entryURL=http://playready.directtaps.net/smoothstreaming/TTLSS720VC1/To_The_Limit_720.ism/Manifest" />
+          <param name="initParams" value="autoplay=true,smoothStreamPlayer=true,playerId=kplayer,entryURL=http://streams.smooth.vertigo.com/elephantsdream/Elephants_Dream_1024-h264-st-aac.ism/manifest,startvolume=1" />
+              <!--param name="initParams" value="autoplay=true,smoothStreamPlayer=true,playerId=kplayer,entryURL=http://playready.directtaps.net/smoothstreaming/TTLSS720VC1/To_The_Limit_720.ism/Manifest" /-->
 
 		  <a href="http://go.microsoft.com/fwlink/?LinkID=149156&v=5.0.61118.0" style="text-decoration:none">
  			  <img src="http://go.microsoft.com/fwlink/?LinkId=161376" alt="Get Microsoft Silverlight" style="border-style:none"/>

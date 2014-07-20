@@ -55,6 +55,8 @@ namespace Player
 
          event EventHandler<ManifestEventArgs> BitratesReady;
 
+         event EventHandler<ManifestEventArgs> AudioTracksReady;
+
          event EventHandler<SourceEventArgs> SourceChanged;
 
 

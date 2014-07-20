@@ -15,11 +15,11 @@ namespace Player
 {
     public class ManifestEventArgs : EventArgs
     {
-        public ManifestEventArgs(List<TrackInfo> flavors)
+        public ManifestEventArgs(List<Object> flavors)
         {
             this.Flavors = flavors;
         }
 
-        public List<TrackInfo> Flavors { get; private set; }
+        public List<Object> Flavors { get; private set; }
     }
 }

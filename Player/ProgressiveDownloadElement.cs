@@ -252,6 +252,8 @@ namespace Player
         #endregion
         public event EventHandler<ManifestEventArgs> BitratesReady;
 
+        public event EventHandler<ManifestEventArgs> AudioTracksReady;
+
         public event EventHandler<SourceEventArgs> SourceChanged;
     }
 }

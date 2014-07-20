@@ -20,6 +20,7 @@ namespace Player
 
         private StreamInfo playingStream;
         private List<TrackInfo> tracks;
+        private List<StreamInfo> audioTracks;
         public SmoothStreamingElement(SmoothStreamingMediaElement element)
         {
             this.element = element;
@@ -46,6 +47,37 @@ namespace Player
                 selectedList.Add(selected);
                 this.playingStream.SelectTracks(selectedList, false);
             }
+        }
+
+        public void selectAudioTrack(int trackIndex)
+        {
+            if (audioTracks != null && audioTracks.Count > trackIndex)
+            {
+                var newAudioStream = audioTracks[trackIndex];
+                var segment = element.ManifestInfo.Segments[element.CurrentSegmentIndex.Value];
+                var newStreams = new List<StreamInfo>();
+                // use current video streams
+                var selectedVideoStreams = segment.SelectedStreams.Where(i => i.Type != MediaStreamType.Audio).ToList();
+                newStreams.AddRange(selectedVideoStreams);
+                // add a new audio stream
+                newStreams.Add(newAudioStream);
+                // replace old streams by new ones
+                segment.SelectStreamsAsync(newStreams);
+            } 
+        }
+
+        public int getCurrentAudioIndex()
+        {
+            if ( audioTracks!=null && audioTracks.Count > 1 ) {
+                var segment = element.ManifestInfo.Segments[element.CurrentSegmentIndex.Value];
+                var currentAudioStream = segment.SelectedStreams.Where(i => i.Type == MediaStreamType.Audio).FirstOrDefault();
+                for (int i = 0; i < audioTracks.Count; i++)
+                {
+                    if (audioTracks[i].Equals(currentAudioStream))
+                        return i;
+                }
+            }            
+             return 0;
         }
 
 
@@ -81,6 +113,8 @@ namespace Player
 
         public event EventHandler<ManifestEventArgs> BitratesReady;
 
+        public event EventHandler<ManifestEventArgs> AudioTracksReady;
+        
         public event EventHandler<SourceEventArgs> SourceChanged;
    
 
@@ -96,27 +130,25 @@ namespace Player
         {
             foreach (SegmentInfo segment in this.element.ManifestInfo.Segments)
             {
+                audioTracks = new List<StreamInfo>();
                 IList<StreamInfo> streamInfoList = segment.AvailableStreams;
                 foreach (StreamInfo stream in streamInfoList)
                 {
                     if (stream.Type == MediaStreamType.Video)
                     {
-                        this.playingStream = stream;
-                        this.tracks = stream.AvailableTracks.ToList<TrackInfo>();
+                        playingStream = stream;
+                        tracks = stream.AvailableTracks.ToList<TrackInfo>();
 
-                        ManifestEventArgs args = new ManifestEventArgs( this.tracks );
+                        ManifestEventArgs args = new ManifestEventArgs( tracks.ToList<Object>() );
                         BitratesReady(this, args);
-
-                        
-                        // Limit bit-rate to 866000.
-                        /* ulong highRate = 866000 + 1;
-                            List<TrackInfo> tracks = new List<TrackInfo>();
-
-                            tracks = ;
-                            IList<TrackInfo> allowedTracks = tracks.Where((ti) => ti.Bitrate < highRate).ToList();
-                            stream.SelectTracks(allowedTracks, false);*/
+                    }
+                    else if (stream.Type == MediaStreamType.Audio)
+                    {
+                        audioTracks.Add(stream);
                     }
                 }
+                ManifestEventArgs audioArgs = new ManifestEventArgs(audioTracks.ToList<Object>());
+                AudioTracksReady(this, audioArgs);
             }
         
         }

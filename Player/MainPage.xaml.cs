@@ -238,6 +238,7 @@ namespace Player
             media.MediaFailed += media_MediaFailed;
             media.MediaOpened += media_MediaOpened;
             media.BitratesReady += media_BitratesReady;
+            media.AudioTracksReady += media_AudioTracksReady;
             media.SourceChanged += media_SourceChanged;
      
           //  media.MouseLeftButtonDown += media_MouseLeftButtonDown;
@@ -426,15 +427,39 @@ namespace Player
             SendEvent("progress");
         }
 
+        void media_AudioTracksReady(object sender, ManifestEventArgs e)
+        {
+            List<Object> tracks = e.Flavors;
+            String languages = "";
+            if (tracks != null)
+            {
+                string langName = "";
+                for (int i = 0; i < tracks.Count; i++)
+                {
+                    ((StreamInfo)tracks.ElementAt(i)).Attributes.TryGetValue("Name", out langName);
+                    languages += "{\"name\":\"" + langName + "\",\"index\":" + i + "}";
+                    if (i < tracks.Count - 1)
+                    {
+                        languages += ",";
+                    }
+                }
+            }
+
+            languages = "{\"languages\":[" + languages + "]}";
+            SendEvent("audioTracksReceived", languages);
+            //notify default audio index
+            SendEvent("audioTrackSelected", "{\"index\":" + (media as SmoothStreamingElement).getCurrentAudioIndex() + "}");
+        }
+
         void media_BitratesReady(object sender, ManifestEventArgs e)
         {
-            List<TrackInfo> tracks = e.Flavors;
+            List<Object> tracks = e.Flavors;
             String bitrates = "";
             if (tracks != null)
             {
                 for (int i = 0; i < tracks.Count; i++)
                 {
-                    bitrates += "{\"type\":\"video/ism\",\"assetid\":" + "\"ism_" + i + "\""+ ",\"bandwidth\":" + tracks.ElementAt(i).Bitrate + ",\"height\":0}";
+                    bitrates += "{\"type\":\"video/ism\",\"assetid\":" + "\"ism_" + i + "\""+ ",\"bandwidth\":" + ((TrackInfo) tracks.ElementAt(i)).Bitrate + ",\"height\":0}";
                     if (i < tracks.Count - 1)
                     {
                         bitrates += ",";
@@ -475,8 +500,6 @@ namespace Player
            
         }
 
-       
-
         [ScriptableMember]
         public void playMedia()
         {
@@ -501,8 +524,6 @@ namespace Player
                 _isEnded = false;
                 _isPaused = false;
             }
-
-     
 
         }
 
@@ -633,6 +654,16 @@ namespace Player
                 (media as SmoothStreamingElement).selectTrack( trackIndex );
             }
 
+        }
+
+        [ScriptableMember]
+        public void selectAudioTrack(int trackIndex)
+        {
+            if (media is SmoothStreamingElement)
+            {
+                (media as SmoothStreamingElement).selectAudioTrack(trackIndex);    
+                SendEvent("audioTrackSelected", "{\"index\":" + (media as SmoothStreamingElement).getCurrentAudioIndex() + "}");
+            }
         }
 
         [ScriptableMember]

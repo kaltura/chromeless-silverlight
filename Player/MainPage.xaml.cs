@@ -239,16 +239,16 @@ namespace Player
             media.MediaOpened += media_MediaOpened;
             media.BitratesReady += media_BitratesReady;
             media.AudioTracksReady += media_AudioTracksReady;
+            media.TextTracksReady += media_TextTracksReady;
             media.SourceChanged += media_SourceChanged;
-     
+            media.MarkerReached += media_MarkerReached;
+  
           //  media.MouseLeftButtonDown += media_MouseLeftButtonDown;
 
             if (!_disableOnScreenClick)
             {
                 media.MouseLeftButtonUp += media_MouseLeftButtonUp;
             }
-            
-
         }
 
         private void StartTimer()
@@ -429,6 +429,23 @@ namespace Player
 
         void media_AudioTracksReady(object sender, ManifestEventArgs e)
         {
+            SendEvent("audioTracksReceived", parseLanguages(e));
+            //notify default audio index
+            SendEvent("audioTrackSelected", "{\"index\":" + (media as SmoothStreamingElement).getCurrentAudioIndex() + "}");
+        }
+
+        void media_TextTracksReady(object sender, ManifestEventArgs e)
+        {
+            SendEvent("textTracksReceived", parseLanguages(e));
+            //notify default text index
+            SendEvent("textTrackSelected", "{\"index\":" + (media as SmoothStreamingElement).getCurrentTextIndex() + "}");
+        }
+
+        /**
+         * parse given args to languages string
+         * */
+        private string parseLanguages( ManifestEventArgs e )
+        {
             List<Object> tracks = e.Flavors;
             String languages = "";
             if (tracks != null)
@@ -437,18 +454,16 @@ namespace Player
                 for (int i = 0; i < tracks.Count; i++)
                 {
                     ((StreamInfo)tracks.ElementAt(i)).Attributes.TryGetValue("Name", out langName);
-                    languages += "{\"name\":\"" + langName + "\",\"index\":" + i + "}";
+                    languages += "{\"label\":\"" + langName + "\",\"index\":" + i + "}";
                     if (i < tracks.Count - 1)
                     {
                         languages += ",";
                     }
                 }
             }
-
             languages = "{\"languages\":[" + languages + "]}";
-            SendEvent("audioTracksReceived", languages);
-            //notify default audio index
-            SendEvent("audioTrackSelected", "{\"index\":" + (media as SmoothStreamingElement).getCurrentAudioIndex() + "}");
+
+            return languages;
         }
 
         void media_BitratesReady(object sender, ManifestEventArgs e)
@@ -474,6 +489,11 @@ namespace Player
         void media_SourceChanged(object sender, SourceEventArgs e)
         {
             SendEvent("switchingChangeComplete", "{\"newIndex\":" + e.NewIndex + "}");
+        }
+
+        void media_MarkerReached(object sender, TimelineMarkerRoutedEventArgs e)
+        {
+            SendEvent("loadEmbeddedCaptions", "{\"language\":\"" + e.Marker.Type + "\", \"text\":\"" + e.Marker.Text + "\"}");
         }
 
         #endregion
@@ -663,6 +683,16 @@ namespace Player
             {
                 (media as SmoothStreamingElement).selectAudioTrack(trackIndex);    
                 SendEvent("audioTrackSelected", "{\"index\":" + (media as SmoothStreamingElement).getCurrentAudioIndex() + "}");
+            }
+        }
+
+        [ScriptableMember]
+        public void selectTextTrack(int trackIndex)
+        {
+            if (media is SmoothStreamingElement)
+            {
+                (media as SmoothStreamingElement).selectTextTrack(trackIndex);
+                SendEvent("textTrackSelected", "{\"index\":" + (media as SmoothStreamingElement).getCurrentTextIndex() + "}");
             }
         }
 

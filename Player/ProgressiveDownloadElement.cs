@@ -254,6 +254,10 @@ namespace Player
 
         public event EventHandler<ManifestEventArgs> AudioTracksReady;
 
+        public event EventHandler<ManifestEventArgs> TextTracksReady;
+
         public event EventHandler<SourceEventArgs> SourceChanged;
+
+        public event EventHandler<TimelineMarkerRoutedEventArgs> MarkerReached;
     }
 }

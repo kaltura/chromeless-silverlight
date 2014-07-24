@@ -57,7 +57,11 @@ namespace Player
 
          event EventHandler<ManifestEventArgs> AudioTracksReady;
 
+         event EventHandler<ManifestEventArgs> TextTracksReady;
+
          event EventHandler<SourceEventArgs> SourceChanged;
+
+         event EventHandler<TimelineMarkerRoutedEventArgs> MarkerReached;
 
 
 

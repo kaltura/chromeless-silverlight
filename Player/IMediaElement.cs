@@ -53,19 +53,6 @@ namespace Player
 
          event  EventHandler<MouseButtonEventArgs> MouseLeftButtonUp;
 
-         event EventHandler<ManifestEventArgs> BitratesReady;
-
-         event EventHandler<ManifestEventArgs> AudioTracksReady;
-
-         event EventHandler<ManifestEventArgs> TextTracksReady;
-
-         event EventHandler<SourceEventArgs> SourceChanged;
-
-         event EventHandler<TimelineMarkerRoutedEventArgs> MarkerReached;
-
-
-
-
         void Play();
 
         void Pause();

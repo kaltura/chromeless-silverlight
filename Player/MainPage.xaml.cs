@@ -237,11 +237,18 @@ namespace Player
             media.MediaEnded += media_MediaEnded;
             media.MediaFailed += media_MediaFailed;
             media.MediaOpened += media_MediaOpened;
-            media.BitratesReady += media_BitratesReady;
-            media.AudioTracksReady += media_AudioTracksReady;
-            media.TextTracksReady += media_TextTracksReady;
-            media.SourceChanged += media_SourceChanged;
-            media.MarkerReached += media_MarkerReached;
+
+            if (media is SmoothStreamingElement)
+            {
+                SmoothStreamingElement ssMedia = media as SmoothStreamingElement;
+                ssMedia.BitratesReady += media_BitratesReady;
+                ssMedia.AudioTracksReady += media_AudioTracksReady;
+                ssMedia.TextTracksReady += media_TextTracksReady;
+                ssMedia.SourceChanged += media_SourceChanged;
+                ssMedia.MarkerReached += media_MarkerReached;
+                ssMedia.TextTrackLoaded += media_TextTrackLoaded;
+            }
+            
   
           //  media.MouseLeftButtonDown += media_MouseLeftButtonDown;
 
@@ -437,8 +444,6 @@ namespace Player
         void media_TextTracksReady(object sender, ManifestEventArgs e)
         {
             SendEvent("textTracksReceived", parseLanguages(e));
-            //notify default text index
-            SendEvent("textTrackSelected", "{\"index\":" + (media as SmoothStreamingElement).getCurrentTextIndex() + "}");
         }
 
         /**
@@ -493,7 +498,12 @@ namespace Player
 
         void media_MarkerReached(object sender, TimelineMarkerRoutedEventArgs e)
         {
-            SendEvent("loadEmbeddedCaptions", "{\"language\":\"" + e.Marker.Type + "\", \"text\":\"" + e.Marker.Text + "\"}");
+            SendEvent("loadEmbeddedCaptions", "{\"language\":\"" + e.Marker.Type + "\", \"ttml\":\"" + Uri.EscapeUriString( e.Marker.Text ) + "\"}");
+        }
+
+        void media_TextTrackLoaded(object sender, SourceEventArgs e)
+        {
+            SendEvent("textTrackSelected", "{\"index\":" + e.NewIndex + ", \"ttml\":\"" + Uri.EscapeUriString(e.Text) + "\"}");
         }
 
         #endregion
@@ -692,7 +702,7 @@ namespace Player
             if (media is SmoothStreamingElement)
             {
                 (media as SmoothStreamingElement).selectTextTrack(trackIndex);
-                SendEvent("textTrackSelected", "{\"index\":" + (media as SmoothStreamingElement).getCurrentTextIndex() + "}");
+                //SendEvent("textTrackSelected", "{\"index\":" + (media as SmoothStreamingElement).getCurrentTextIndex() + "}");
             }
         }
 

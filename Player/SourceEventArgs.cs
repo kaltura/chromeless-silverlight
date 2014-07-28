@@ -19,6 +19,8 @@ namespace Player
             this.NewIndex = newIndex;
         }
 
+        public string Text { get; set; }
+
         public int NewIndex { get; private set; }
     }
 }

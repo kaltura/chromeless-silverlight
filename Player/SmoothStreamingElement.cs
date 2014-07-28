@@ -28,6 +28,7 @@ namespace Player
         private List<ChunkInfo> textChunks;
         private StreamInfo currentTextTrack = null;
         private DispatcherTimer _capt_timer;
+        private Boolean textTrackLoaded = false;
         private const int CAPT_FRAGMENT_COUNT = 6;
         private const int CAPT_TIMER_INTERVAL = 10; // seconds
 
@@ -95,6 +96,7 @@ namespace Player
                 textChunks = currentTextTrack.ChunkList.ToList<ChunkInfo>();
                 //clear previous language markers
                 this.element.Markers.Clear();
+                textTrackLoaded = false;
                 getNextTextChunks(null, null);
                 if (_capt_timer == null)
                 {
@@ -173,16 +175,19 @@ namespace Player
 
         void element_PlaybackTrackChanged(object sender, TrackChangedEventArgs e)
         {
-            SourceEventArgs args; 
-            for (int i = 0; i < this.tracks.Count; i++)
+            if (this.tracks != null)
             {
-                if (this.tracks[i].Bitrate == e.NewTrack.Bitrate)
+                SourceEventArgs args;
+                for (int i = 0; i < this.tracks.Count; i++)
                 {
-                    args = new SourceEventArgs(i);
-                    SourceChanged(this, args);
-                    break;
-                }
-            }      
+                    if (this.tracks[i].Bitrate == e.NewTrack.Bitrate)
+                    {
+                        args = new SourceEventArgs(i);
+                        SourceChanged(this, args);
+                        break;
+                    }
+                }  
+            }       
         }
 
         #region IMediaElement implementation
@@ -206,6 +211,8 @@ namespace Player
         public event EventHandler<ManifestEventArgs> AudioTracksReady;
 
         public event EventHandler<ManifestEventArgs> TextTracksReady;
+
+        public event EventHandler<SourceEventArgs> TextTrackLoaded;
         
         public event EventHandler<SourceEventArgs> SourceChanged;
 
@@ -304,10 +311,23 @@ namespace Player
                                 XElement xElem = XElement.Parse(text);
                                 XElement bodyElem = xElem.Elements().FirstOrDefault(e => e.Name.LocalName == "body");
 
+                                //first received chunk - notify js
+                                if (!textTrackLoaded)
+                                {
+                                    XElement copyElement = new XElement(xElem);
+                                    XElement copyBodyElem = copyElement.Elements().FirstOrDefault(e => e.Name.LocalName == "body");
+                                    //we can't send the body elements, they are causing "Eval" exception
+                                    copyBodyElem.RemoveAll();
+                                    SourceEventArgs args = new SourceEventArgs(getCurrentTextIndex());
+                                    args.Text = copyElement.ToString();
+                                    TextTrackLoaded(this, args);
+                                    textTrackLoaded = true;
+                                }
+                                    
                                 foreach (XElement el in bodyElem.Elements())
                                 {
                                     TimelineMarker newMarker = new TimelineMarker();
-                                    newMarker.Text = el.Value;
+                                    newMarker.Text = el.ToString();
                                     string begin = el.Attribute("begin").Value;
                                     newMarker.Time = chunkResult.Timestamp + TimeSpan.Parse(begin );
                                     string langName = "";

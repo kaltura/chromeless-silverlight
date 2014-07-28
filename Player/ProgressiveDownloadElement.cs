@@ -250,14 +250,5 @@ namespace Player
             }
         }
         #endregion
-        public event EventHandler<ManifestEventArgs> BitratesReady;
-
-        public event EventHandler<ManifestEventArgs> AudioTracksReady;
-
-        public event EventHandler<ManifestEventArgs> TextTracksReady;
-
-        public event EventHandler<SourceEventArgs> SourceChanged;
-
-        public event EventHandler<TimelineMarkerRoutedEventArgs> MarkerReached;
     }
 }

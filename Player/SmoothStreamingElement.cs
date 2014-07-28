@@ -29,7 +29,7 @@ namespace Player
         private StreamInfo currentTextTrack = null;
         private DispatcherTimer _capt_timer;
         private Boolean textTrackLoaded = false;
-        private const int CAPT_FRAGMENT_COUNT = 6;
+        private const int CAPT_FRAGMENT_COUNT = 20;
         private const int CAPT_TIMER_INTERVAL = 10; // seconds
 
         public SmoothStreamingElement(SmoothStreamingMediaElement element)
@@ -123,7 +123,7 @@ namespace Player
             {
                 //get upcoming text chunks
                 List<ChunkInfo> chunks = textChunks.Where(i => i.TimeStamp >= this.Position).ToList();
-                //read max 6 at a time
+                //read max 20 at a time
                 int size = Math.Min(CAPT_FRAGMENT_COUNT, chunks.Count);
                 TrackInfo trackInfo = currentTextTrack.SelectedTracks[0];
                 for (int i = 0; i < size; i++)

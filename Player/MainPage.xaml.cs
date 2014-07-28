@@ -498,12 +498,12 @@ namespace Player
 
         void media_MarkerReached(object sender, TimelineMarkerRoutedEventArgs e)
         {
-            SendEvent("loadEmbeddedCaptions", "{\"language\":\"" + e.Marker.Type + "\", \"ttml\":\"" + Uri.EscapeUriString( e.Marker.Text ) + "\"}");
+            SendEvent("loadEmbeddedCaptions", "{\"language\":\"" + e.Marker.Type + "\", \"ttml\":\"" + HttpUtility.HtmlEncode(Uri.EscapeUriString(e.Marker.Text)) + "\"}");
         }
 
         void media_TextTrackLoaded(object sender, SourceEventArgs e)
         {
-            SendEvent("textTrackSelected", "{\"index\":" + e.NewIndex + ", \"ttml\":\"" + Uri.EscapeUriString(e.Text) + "\"}");
+            SendEvent("textTrackSelected", "{\"index\":" + e.NewIndex + ", \"ttml\":\"" +  HttpUtility.HtmlEncode( Uri.EscapeUriString (e.Text)) + "\"}");
         }
 
         #endregion
@@ -702,7 +702,6 @@ namespace Player
             if (media is SmoothStreamingElement)
             {
                 (media as SmoothStreamingElement).selectTextTrack(trackIndex);
-                //SendEvent("textTrackSelected", "{\"index\":" + (media as SmoothStreamingElement).getCurrentTextIndex() + "}");
             }
         }
 

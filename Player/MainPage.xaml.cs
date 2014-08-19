@@ -46,6 +46,8 @@ namespace Player
         private string _challengeCustomData;
         private bool _enableSmoothStreamPlayer;
         private bool _enableMultiCastPlayer;
+        private bool _isLive = false;
+        private bool _isDVR = false;
 
         private IMediaElement media = null;
         private string _ip;
@@ -223,6 +225,12 @@ namespace Player
                 }
             }
 
+            if (initParams.ContainsKey("isLive") && initParams["isLive"] == "true")
+                _isLive = true;
+
+            if (initParams.ContainsKey("isDVR") && initParams["isDVR"] == "true")
+                _isDVR = true;
+
         }
 
         /// <summary>
@@ -320,7 +328,7 @@ namespace Player
                         playMedia();
                         break;
                     case MediaElementState.Stopped:
-
+                        playMedia();
                         break;
                     case MediaElementState.Buffering:
                         pauseMedia();
@@ -565,7 +573,15 @@ namespace Player
             _isEnded = false;
             _isPaused = true;
 
-            media.Pause();
+            if (_isLive && !_isDVR)
+            {
+                media.Stop();
+            }
+            else
+            {
+                media.Pause();
+            }
+            
             StopTimer();
           
         }

@@ -349,7 +349,7 @@ namespace Player
         void media_MediaFailed(object sender, ExceptionRoutedEventArgs e)
         {
             WriteDebug(e.ErrorException.Message);
-            SendEvent("alert", e.ErrorException.Message);
+            SendEvent("error", "{\"errorMessage\":\"" + e.ErrorException.Message + "\", \"stackTrace\":\"" + e.ErrorException.StackTrace + "\"}" );
         }
 
         void media_MediaEnded(object sender, RoutedEventArgs e)

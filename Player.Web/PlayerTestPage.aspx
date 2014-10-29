@@ -58,11 +58,12 @@
         function pluginLoaded(sender, args) {
             slCtl = sender.getHost();
             slCtl.Content.MediaElementJS.addJsListener("playerPlayed", "playing");
-            slCtl.Content.MediaElementJS.addJsListener("flavorsListChanged", "listing");
-            slCtl.Content.MediaElementJS.addJsListener("audioTracksReceived", "audios");
-            slCtl.Content.MediaElementJS.addJsListener("audioTrackSelected", "audioSelected");
+           // slCtl.Content.MediaElementJS.addJsListener("flavorsListChanged", "listing");
+           // slCtl.Content.MediaElementJS.addJsListener("audioTracksReceived", "audios");
+           // slCtl.Content.MediaElementJS.addJsListener("audioTrackSelected", "audioSelected");
+           // slCtl.Content.MediaElementJS.addJsListener("textTracksReceived", "audios");
+            slCtl.Content.MediaElementJS.addJsListener("textTrackSelected", "onCaption");
 
-           
         }
         function ready(playerId) {
             debugger;
@@ -99,16 +100,38 @@
         function changeAudio2() {
             slCtl.Content.MediaElementJS.selectAudioTrack(2);
         }
+
+        function changeText0() {
+            slCtl.Content.MediaElementJS.selectTextTrack(0);
+        }
+
+        function changeText1() {
+            slCtl.Content.MediaElementJS.selectTextTrack(1);
+        }
+
+        function onCaption(data) {
+            document.getElementById("captions").value += "\n" + parseHtmlEnteties(decodeURIComponent(JSON.parse(data).ttml));
+        }
+
+        function parseHtmlEnteties(str) {
+            return str.replace(/&#([0-9]{1,3});/gi, function (match, numStr) {
+                var num = parseInt(numStr, 10); // read num as normal number
+                return String.fromCharCode(num);
+            });
+        }
     </script>
 </head>
 <body>
     <div><Button onClick="changeIndex()">set stream index</Button></div>
      <div><Button onClick="play()">Play</Button></div>
+     <div><Button onClick="changeText0()">Change Text0</Button></div>
+     <div><Button onClick="changeText1()">Change Text1</Button></div>
      <div><Button onClick="changeAudio0()">Change Audio0</Button></div>
      <div><Button onClick="changeAudio1()">Change Audio1</Button></div>
      <div><Button onClick="changeAudio2()">Change Audio2</Button></div>
 
     <form id="form1" runat="server" style="height:100%">
+    <textarea id="captions" style="width:300px;height:280px;" value="test1" ></textarea>
     <div id="silverlightControlHost">
 
         <object id="kplayer" data="data:application/x-silverlight-2," type="application/x-silverlight-2" width="400" height="330">
@@ -118,8 +141,10 @@
 		  <param name="minRuntimeVersion" value="5.0.61118.0" />
           <param name="onLoad" value="pluginLoaded" />
 		  <param name="autoUpgrade" value="true" />
-          <param name="initParams" value="autoplay=true,smoothStreamPlayer=true,playerId=kplayer,entryURL=http://streams.smooth.vertigo.com/elephantsdream/Elephants_Dream_1024-h264-st-aac.ism/manifest,startvolume=1" />
-              <!--param name="initParams" value="autoplay=true,smoothStreamPlayer=true,playerId=kplayer,entryURL=http://playready.directtaps.net/smoothstreaming/TTLSS720VC1/To_The_Limit_720.ism/Manifest" /-->
+          <%--<param name="initParams" value="autoplay=true,smoothStreamPlayer=true,playerId=kplayer,entryURL=http://mediadl.microsoft.com/mediadl/iisnet/smoothmedia/Experience/BigBuckBunny_720p.ism/Manifest,startvolume=1" />--%>
+          <%--<param name="initParams" value="autoplay=true,smoothStreamPlayer=true,playerId=kplayer,entryURL=http://playready.directtaps.net/smoothstreaming/TTLSS720VC1/To_The_Limit_720.ism/Manifest" />--%>
+
+          <param name="initParams" value="startvolume=1,smoothStreamPlayer=true,preload=auto,entryURL=http://mcott2_tvinci2-s.akamaihd.net/ondemand/201407B/TA_HD_DOCTOR_X_S2_EP6_PC_SS.ism/Manifest,licenseURL=http://playready.tvinci.com/rightsmanager.asmx,autoPlay=true" />
 
 		  <a href="http://go.microsoft.com/fwlink/?LinkID=149156&v=5.0.61118.0" style="text-decoration:none">
  			  <img src="http://go.microsoft.com/fwlink/?LinkId=161376" alt="Get Microsoft Silverlight" style="border-style:none"/>
@@ -140,7 +165,7 @@
  			  <img src="http://go.microsoft.com/fwlink/?LinkId=161376" alt="Get Microsoft Silverlight" style="border-style:none"/>
 		  </a>
 	    </object><iframe id="_sl_historyFrame" style="visibility:hidden;height:0px;width:0px;border:0px"></iframe></div>
-     -->
+     
          <!--object id="kplayer" data="data:application/x-silverlight-2," type="application/x-silverlight-2" width="100%" height="100%">
 		  <param name="source" value="ClientBin/Player.xap"/>
 		  <param name="onError" value="onSilverlightError" />

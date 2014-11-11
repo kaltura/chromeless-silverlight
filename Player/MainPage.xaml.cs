@@ -48,6 +48,7 @@ namespace Player
         private bool _enableMultiCastPlayer;
         private bool _isLive = false;
         private bool _isDVR = false;
+        private bool _shouldReload = false;
 
         private IMediaElement media = null;
         private string _ip;
@@ -544,14 +545,15 @@ namespace Player
             WriteDebug("method:play " + media.CurrentState );
 
             // sometimes people forget to call load() first
-            if (!_enableMultiCastPlayer && (media.CurrentState == MediaElementState.Closed || (_mediaUrl != "" && media.Source == null)))
+            if (_shouldReload || ( !_enableMultiCastPlayer && (media.CurrentState == MediaElementState.Closed || (_mediaUrl != "" && media.Source == null))))
             {
                 _isAttemptingToPlay = true;
+                _shouldReload = false;
                 loadMedia();
-            }
 
+            }
             // store and trigger with the state change above
-            if (media.CurrentState == MediaElementState.Closed && _isLoading)
+            else if (media.CurrentState == MediaElementState.Closed && _isLoading)
             {
                 WriteDebug("storing _isAttemptingToPlay ");
                 _isAttemptingToPlay = true;
@@ -575,13 +577,9 @@ namespace Player
 
             if (_isLive && !_isDVR)
             {
-                media.Stop();
+                _shouldReload = true;
             }
-            else
-            {
-                media.Pause();
-            }
-            
+            media.Pause();    
             StopTimer();
           
         }

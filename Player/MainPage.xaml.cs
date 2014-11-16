@@ -488,7 +488,12 @@ namespace Player
             {
                 for (int i = 0; i < tracks.Count; i++)
                 {
-                    bitrates += "{\"type\":\"video/ism\",\"assetid\":" + "\"ism_" + i + "\""+ ",\"bandwidth\":" + ((TrackInfo) tracks.ElementAt(i)).Bitrate + ",\"height\":0}";
+                    int height = 0;
+                    if (((TrackInfo)tracks.ElementAt(i)).Attributes.ContainsKey("MaxHeight"))
+                    {
+                        Int32.TryParse(((TrackInfo)tracks.ElementAt(i)).Attributes["MaxHeight"], out height);
+                    }
+                    bitrates += "{\"type\":\"video/ism\",\"assetid\":" + "\"ism_" + i + "\"" + ",\"bandwidth\":" + ((TrackInfo)tracks.ElementAt(i)).Bitrate + ",\"height\":" + height + "}";
                     if (i < tracks.Count - 1)
                     {
                         bitrates += ",";

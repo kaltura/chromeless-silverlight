@@ -175,7 +175,11 @@ namespace Player
                 _autoplay = true;
 
             if (initParams.ContainsKey("debug") && initParams["debug"] == "true")
+            {
                 _debug = true;
+
+                MediaStreamSrc.Model.WMSLoggerFactory.getLogger(null).DebugEnabled = true;
+            }
 
             if (initParams.ContainsKey("preload"))
                 _preload = initParams["preload"].ToLower();
@@ -264,6 +268,8 @@ namespace Player
         private void WriteDebug(string text)
         {
             tb_debug.Text += text + "\n";
+
+            MediaStreamSrc.Model.WMSLoggerFactory.getLogger(null).debug(text);
         }
 
         private void SendEvent(string eventName,string param = null)
@@ -323,7 +329,10 @@ namespace Player
         }
         void _timer_Tick(object sender, EventArgs e)
         {
-            SendEvent("playerUpdatePlayhead", media.Position.TotalSeconds.ToString());
+            var time = CurrentTimeInSeconds + TimeOffsetInSeconds;
+            WriteDebug("playerUpdatePlayhead " + TimeSpan.FromSeconds(time));
+
+            SendEvent("playerUpdatePlayhead", time.ToString());
         }
        
         void media_MediaOpened(object sender, RoutedEventArgs e)
@@ -422,7 +431,6 @@ namespace Player
         {
              _bufferedTime = media.DownloadProgress * media.NaturalDuration.TimeSpan.TotalSeconds;
             _bufferedBytes = media.BufferingProgress;
-
 
             SendEvent("progress");
         }
@@ -632,6 +640,9 @@ namespace Player
             SendEvent("playerSeekEnd",media.Position.TotalSeconds.ToString());
         }
 
+
+
+
         [ScriptableMember]
         public void setSrc(string url)
         {
@@ -677,6 +688,26 @@ namespace Player
         }
         #endregion
 
-
+        [ScriptableMember]
+        public double TimeOffsetInSeconds
+        {
+            get
+            {
+                if (media is MulticastPlayer)
+                {
+                    return (media as MulticastPlayer).TimeOffset.TotalSeconds;
+                }
+                return 0;
+            }
+        }
+        
+        [ScriptableMember]
+        public double CurrentTimeInSeconds
+        {
+            get
+            {
+                return media.Position.TotalSeconds;
+            }
+        }
     }
 }

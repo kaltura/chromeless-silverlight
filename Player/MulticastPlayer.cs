@@ -10,6 +10,8 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 using System.Collections.Generic;
+using System.Reflection;
+using System.Net.Sockets;
 
 namespace Player
 {
@@ -31,6 +33,8 @@ namespace Player
                 param.Add("streamAddress", ip);
             }
             this.receiver.init(param);
+            this.element.BufferingTime = TimeSpan.FromSeconds(5);
+            this.element.Volume = 1.0;
         }
 
         public void stretchFill()
@@ -48,6 +52,27 @@ namespace Player
 
         void receiver_BeginJoinGroup(string streamAddress, int streamPort)
         {
+        }
+
+
+        public TimeSpan TimeOffset
+        {
+            get
+            {
+                try
+                {
+                    var streamSource = receiver.getMediaSteramSource();
+                    if (streamSource != null)
+                    {
+                        return (streamSource as MediaStreamSourceMulticast).TimecodeOffset;
+                    }
+                }
+                catch (Exception e)
+                {
+                    MediaStreamSrc.Model.WMSLoggerFactory.getLogger(null).warn("Exception in timeoffset " + e);
+                }
+                return TimeSpan.Zero;
+            }
         }
 
 

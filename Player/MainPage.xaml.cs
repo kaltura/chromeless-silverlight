@@ -695,6 +695,8 @@ namespace Player
         }
         #endregion
 
+        
+
         [ScriptableMember]
         public double TimeOffsetInSeconds
         {
@@ -703,6 +705,19 @@ namespace Player
                 if (media is MulticastPlayer)
                 {
                     return (media as MulticastPlayer).TimeOffset.TotalSeconds;
+                }
+                return 0;
+            }
+        }
+
+        [ScriptableMember]
+        public double MulticastAverageBitRate
+        {
+            get
+            {
+                if (media is MulticastPlayer)
+                {
+                    return (media as MulticastPlayer).AverageBitRate;
                 }
                 return 0;
             }

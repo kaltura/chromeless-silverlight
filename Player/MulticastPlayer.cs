@@ -57,6 +57,25 @@ namespace Player
         {
         }
 
+        public double AverageBitRate
+        {
+            get
+            {
+                try
+                {
+                    var streamSource = receiver.getMediaSteramSource();
+                    if (streamSource != null)
+                    {
+                        return (streamSource as MediaStreamSourceMulticast).AverageBitRate;
+                    }
+                }
+                catch (Exception e)
+                {
+                    MediaStreamSrc.Model.WMSLoggerFactory.getLogger(null).warn("Exception in timeoffset " + e);
+                }
+                return 0;
+            }
+        }
 
         public TimeSpan TimeOffset
         {

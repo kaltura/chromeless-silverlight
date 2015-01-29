@@ -46,6 +46,7 @@ namespace Player
         private string _challengeCustomData;
         private bool _enableSmoothStreamPlayer;
         private bool _enableMultiCastPlayer;
+        private TimeSpan _minBufferDurationMulticast = TimeSpan.FromSeconds(1);
 
         private IMediaElement media = null;
         private string _ip;
@@ -100,7 +101,7 @@ namespace Player
             if (_enableMultiCastPlayer)
             {
                 progressive_media.Visibility = System.Windows.Visibility.Visible;
-                media = new MulticastPlayer(progressive_media, _ip);
+                media = new MulticastPlayer(progressive_media, _ip, _minBufferDurationMulticast);
                 WriteDebug("ChoosePlayer : MultiCast player");
                 return;
             }
@@ -225,6 +226,12 @@ namespace Player
                 {
                     _ip = initParams["streamAddress"];
                 }
+                if (initParams.ContainsKey("minBufferDurationMulticast"))
+                {
+                     TimeSpan.TryParse(initParams["minBufferDurationMulticast"],out _minBufferDurationMulticast);
+                }
+                
+
             }
 
         }
@@ -584,7 +591,7 @@ namespace Player
             WriteDebug("method:reloadMedia " + media.CurrentState);
             if (_enableMultiCastPlayer)
             {
-                media = new MulticastPlayer(progressive_media, _ip);
+                media = new MulticastPlayer(progressive_media, _ip, _minBufferDurationMulticast);
             }
         }
 

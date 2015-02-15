@@ -637,6 +637,7 @@ namespace Player
 
             SendEvent("playerSeekStart","0");
             media.Position = new TimeSpan(0, 0, 0, 0, milliseconds);
+            SendEvent("playerUpdatePlayhead", media.Position.TotalSeconds.ToString());
             SendEvent("playerSeekEnd",media.Position.TotalSeconds.ToString());
         }
 

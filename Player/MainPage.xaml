@@ -10,6 +10,6 @@
     <Grid x:Name="LayoutRoot" >
         <MediaElement Name="progressive_media" Grid.Column="0" Grid.Row="0"></MediaElement>
         <SSME:SmoothStreamingMediaElement Name="SmoothStream_media" Grid.Row="0" AutoPlay="True"></SSME:SmoothStreamingMediaElement>
-        <TextBox Name="tb_debug"></TextBox>
+        <TextBox Name="tb_debug"  Height="200"></TextBox>
     </Grid>
 </UserControl>

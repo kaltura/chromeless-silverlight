@@ -18,7 +18,7 @@ namespace Player
     public class MulticastPlayer : ProgressiveMediaElement
     {
         private MulticastReceiver receiver;
-        public MulticastPlayer(MediaElement element, string ip = null)
+        public MulticastPlayer(MediaElement element, string ip,TimeSpan minBufferDuration)
             : base(element)
         {
             this.element = element;
@@ -32,8 +32,11 @@ namespace Player
             {
                 param.Add("streamAddress", ip);
             }
+            if (!String.IsNullOrEmpty(ip))
+            {
+                param.Add("minBufferDuration", minBufferDuration.ToString());
+            }
             this.receiver.init(param);
-            this.element.BufferingTime = TimeSpan.FromSeconds(5);
             this.element.Volume = 1.0;
         }
 
@@ -54,6 +57,25 @@ namespace Player
         {
         }
 
+        public double AverageBitRate
+        {
+            get
+            {
+                try
+                {
+                    var streamSource = receiver.getMediaSteramSource();
+                    if (streamSource != null)
+                    {
+                        return (streamSource as MediaStreamSourceMulticast).AverageBitRate;
+                    }
+                }
+                catch (Exception e)
+                {
+                    MediaStreamSrc.Model.WMSLoggerFactory.getLogger(null).warn("Exception in timeoffset " + e);
+                }
+                return 0;
+            }
+        }
 
         public TimeSpan TimeOffset
         {

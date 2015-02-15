@@ -65,7 +65,8 @@
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Microsoft SDKs\IIS Smooth Streaming Client\v2.0\Silverlight\Microsoft.Web.Media.SmoothStreaming.dll</HintPath>
     </Reference>
     <Reference Include="mscorlib" />
-    <Reference Include="multicast-silverlight-lib">
+    <Reference Include="multicast-silverlight-lib, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>.\multicast-silverlight-lib.dll</HintPath>
     </Reference>
     <Reference Include="System.Windows" />

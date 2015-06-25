@@ -102,12 +102,6 @@
   <ItemGroup>
     <None Include="Properties\AppManifest.xml" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\multicast-silverlight-lib\multicast-silverlight-lib.csproj">
-      <Project>{7f54e99b-9ba9-4de1-9d80-21d99e838d0f}</Project>
-      <Name>multicast-silverlight-lib</Name>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Silverlight\$(SilverlightVersion)\Microsoft.Silverlight.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

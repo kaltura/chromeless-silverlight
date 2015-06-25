@@ -11,6 +11,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 using System.Linq;
+using MediaStreamSrc.Classes;
 
 namespace Player
 {
@@ -21,8 +22,10 @@ namespace Player
         private StreamInfo playingStream;
         private List<TrackInfo> tracks;
         private List<StreamInfo> audioTracks;
-        public SmoothStreamingElement(SmoothStreamingMediaElement element)
+        Logger logger; 
+        public SmoothStreamingElement(SmoothStreamingMediaElement element,Logger logger)
         {
+            this.logger = logger;
             this.element = element;
             this.element.CurrentStateChanged += element_CurrentStateChanged;
             this.element.BufferingProgressChanged += element_BufferingProgressChanged;

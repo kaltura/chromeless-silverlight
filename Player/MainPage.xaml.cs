@@ -1,4 +1,5 @@
-﻿using Microsoft.Web.Media.SmoothStreaming;
+﻿using MediaStreamSrc.Classes;
+using Microsoft.Web.Media.SmoothStreaming;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -28,7 +29,7 @@ namespace Player
         private int _width;
         private int _height;
         private int _timerRate;
-        private Double _volume;
+        private Double _volume=1;
         private string _readyCallBack;
         private bool _externalInterfaceDisabled = false;
         private bool _disableOnScreenClick = false;
@@ -46,7 +47,7 @@ namespace Player
         private string _challengeCustomData;
         private bool _enableSmoothStreamPlayer;
         private bool _enableMultiCastPlayer;
-
+     
         private IMediaElement media = null;
         private string _ip;
        
@@ -83,31 +84,40 @@ namespace Player
                     WriteDebug("Error occur while trying to call readyCallBack function:" + e.Message);
                 }
             }
+
+            this.Unloaded += MainPage_Unloaded;
           
+        }
+
+        void MainPage_Unloaded(object sender, RoutedEventArgs e)
+        {
+            cleanup();
         }
 
         private void ChoosePlayer()
         {
+            Logger logger = new Logger(string.Format("{0}-{1}", Guid.NewGuid(), _ip));
+
             progressive_media.Visibility =  System.Windows.Visibility.Collapsed;
             SmoothStream_media.Visibility = System.Windows.Visibility.Collapsed;
             if (_enableSmoothStreamPlayer)
             {
                 SmoothStream_media.Visibility = System.Windows.Visibility.Visible;
-                media = new SmoothStreamingElement(SmoothStream_media);
+                media = new SmoothStreamingElement(SmoothStream_media, logger);
                 WriteDebug("ChoosePlayer : SmoothStream player");
                 return;
             }
             if (_enableMultiCastPlayer)
             {
                 progressive_media.Visibility = System.Windows.Visibility.Visible;
-                media = new MulticastPlayer(progressive_media, _ip);
+                media = new MulticastPlayer(progressive_media, _ip, logger);
                 WriteDebug("ChoosePlayer : MultiCast player");
                 return;
             }
 
             //default
             progressive_media.Visibility = System.Windows.Visibility.Visible;
-            media = new ProgressiveMediaElement(progressive_media);
+            media = new ProgressiveMediaElement(progressive_media, logger);
 
             WriteDebug("ChoosePlayer : Progressive download player");
         }
@@ -175,7 +185,11 @@ namespace Player
                 _autoplay = true;
 
             if (initParams.ContainsKey("debug") && initParams["debug"] == "true")
+            {
                 _debug = true;
+
+                MediaStreamSrc.Model.WMSLoggerFactory.getLogger(null).DebugEnabled = true;
+            }
 
             if (initParams.ContainsKey("preload"))
                 _preload = initParams["preload"].ToLower();
@@ -221,6 +235,7 @@ namespace Player
                 {
                     _ip = initParams["streamAddress"];
                 }
+         
             }
 
         }
@@ -264,6 +279,8 @@ namespace Player
         private void WriteDebug(string text)
         {
             tb_debug.Text += text + "\n";
+
+            MediaStreamSrc.Model.WMSLoggerFactory.getLogger(null).debug(text);
         }
 
         private void SendEvent(string eventName,string param = null)
@@ -298,7 +315,16 @@ namespace Player
                 }
             }
         }
-       
+
+        private void cleanup()
+        {
+            if (media is IDisposable)
+            {
+                (media as IDisposable).Dispose();
+                media = null;
+            }
+        }
+   
         #region media events
         void media_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
@@ -323,7 +349,10 @@ namespace Player
         }
         void _timer_Tick(object sender, EventArgs e)
         {
-            SendEvent("playerUpdatePlayhead", media.Position.TotalSeconds.ToString());
+            var time = CurrentTimeInSeconds + TimeOffsetInSeconds;
+            WriteDebug("playerUpdatePlayhead " + TimeSpan.FromSeconds(time));
+
+            SendEvent("playerUpdatePlayhead", time.ToString());
         }
        
         void media_MediaOpened(object sender, RoutedEventArgs e)
@@ -422,7 +451,6 @@ namespace Player
         {
              _bufferedTime = media.DownloadProgress * media.NaturalDuration.TimeSpan.TotalSeconds;
             _bufferedBytes = media.BufferingProgress;
-
 
             SendEvent("progress");
         }
@@ -576,7 +604,9 @@ namespace Player
             WriteDebug("method:reloadMedia " + media.CurrentState);
             if (_enableMultiCastPlayer)
             {
-                media = new MulticastPlayer(progressive_media, _ip);
+                cleanup();
+                Logger logger = new Logger(string.Format("{0}-{1}", Guid.NewGuid(), _ip));
+                media = new MulticastPlayer(progressive_media, _ip, logger);
             }
         }
 
@@ -632,6 +662,9 @@ namespace Player
             SendEvent("playerSeekEnd",media.Position.TotalSeconds.ToString());
         }
 
+
+
+
         [ScriptableMember]
         public void setSrc(string url)
         {
@@ -677,6 +710,41 @@ namespace Player
         }
         #endregion
 
+        
 
+        [ScriptableMember]
+        public double TimeOffsetInSeconds
+        {
+            get
+            {
+                if (media is MulticastPlayer)
+                {
+                    return (media as MulticastPlayer).TimeOffset.TotalSeconds;
+                }
+                return 0;
+            }
+        }
+
+        [ScriptableMember]
+        public double MulticastAverageBitRate
+        {
+            get
+            {
+                if (media is MulticastPlayer)
+                {
+                    return (media as MulticastPlayer).AverageBitRate;
+                }
+                return 0;
+            }
+        }
+        
+        [ScriptableMember]
+        public double CurrentTimeInSeconds
+        {
+            get
+            {
+                return media.Position.TotalSeconds;
+            }
+        }
     }
 }

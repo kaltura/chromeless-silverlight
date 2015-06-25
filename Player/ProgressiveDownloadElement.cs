@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MediaStreamSrc.Classes;
+using System;
 using System.Net;
 using System.Windows;
 using System.Windows.Controls;
@@ -11,12 +12,15 @@ using System.Windows.Shapes;
 
 namespace Player
 {
-    public class ProgressiveMediaElement : IMediaElement
+    public class ProgressiveMediaElement : IMediaElement, IDisposable
     {
+        protected Logger logger; 
+
         public MediaElement element { get; set; }
-        public ProgressiveMediaElement(MediaElement element)
+        public ProgressiveMediaElement(MediaElement element,Logger logger)
         {
-            this.element = element; 
+            this. logger = logger;
+            this.element = element;
             this.element.CurrentStateChanged += element_CurrentStateChanged;
             this.element.BufferingProgressChanged += element_BufferingProgressChanged;
             this.element.DownloadProgressChanged += element_DownloadProgressChanged;
@@ -47,6 +51,7 @@ namespace Player
 
         void element_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
+            this.logger.debug("element_MouseLeftButtonUp"); 
             if (MouseLeftButtonUp != null)
             {
                 MouseLeftButtonUp(sender, e);
@@ -55,6 +60,8 @@ namespace Player
 
         void element_MediaOpened(object sender, RoutedEventArgs e)
         {
+            this.logger.info("element_MediaOpened"); 
+   
             if (MediaOpened != null)
             {
                 MediaOpened(sender, e);
@@ -63,6 +70,8 @@ namespace Player
 
         void element_MediaFailed(object sender, ExceptionRoutedEventArgs e)
         {
+            this.logger.info("element_MediaFailed"); 
+   
             if (MediaFailed != null)
             {
                 MediaFailed(sender, e);
@@ -71,6 +80,8 @@ namespace Player
 
         void element_MediaEnded(object sender, RoutedEventArgs e)
         {
+            this.logger.info("element_MediaEnded"); 
+   
             if (MediaEnded != null)
             {
                 MediaEnded(sender, e);
@@ -79,6 +90,8 @@ namespace Player
 
         void element_DownloadProgressChanged(object sender, RoutedEventArgs e)
         {
+            this.logger.info("element_DownloadProgressChanged progress={0}", ((MediaElement)sender).DownloadProgress); 
+   
             if (DownloadProgressChanged != null)
             {
                 DownloadProgressChanged(sender, e);
@@ -87,6 +100,8 @@ namespace Player
 
         void element_BufferingProgressChanged(object sender, RoutedEventArgs e)
         {
+            this.logger.info("element_BufferingProgressChanged progress={0}", ((MediaElement)sender).BufferingProgress); 
+   
             if (BufferingProgressChanged != null)
             {
                 BufferingProgressChanged(sender, e);
@@ -95,6 +110,8 @@ namespace Player
 
         void element_CurrentStateChanged(object sender, RoutedEventArgs e)
         {
+            this.logger.info("element_CurrentStateChanged state={0}",((MediaElement)sender).CurrentState); 
+   
             if (CurrentStateChanged != null)
             {
                 CurrentStateChanged(sender, e);
@@ -109,6 +126,8 @@ namespace Player
             }
             set
             {
+                this.logger.info("AutoPlay value={0}",value); 
+  
                 element.AutoPlay = value;
             }
         }
@@ -121,17 +140,23 @@ namespace Player
             }
             set
             {
+                this.logger.info("Volume value={0}", value); 
+  
                 element.Volume = value;
             }
         }
 
         public void Play()
         {
+            this.logger.info("Play"); 
+  
             element.Play();
         }
 
         public void Pause()
         {
+            this.logger.info("Pause"); 
+  
             element.Pause();
         }
 
@@ -155,12 +180,15 @@ namespace Player
             }
             set
             {
+                this.logger.info("Source={0}",value); 
+  
                 element.Source = value;
             }
         }
 
         public void Stop()
         {
+            this.logger.info("Stop"); 
             element.Stop();
         }
 
@@ -172,6 +200,8 @@ namespace Player
             }
             set
             {
+                this.logger.info("set_IsMuted={0}",value); 
+   
                 element.IsMuted = value;
             }
         }
@@ -222,6 +252,7 @@ namespace Player
             }
             set
             {
+                this.logger.info("set_Position={0}", value); 
                 element.Position = value;
             }
         }
@@ -255,5 +286,20 @@ namespace Player
         public event EventHandler<ManifestEventArgs> AudioTracksReady;
 
         public event EventHandler<SourceEventArgs> SourceChanged;
+
+        #region IDisposable
+        ~ProgressiveMediaElement()
+        {
+            Dispose(false);
+        }
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        protected virtual void Dispose(bool disposing)
+        {
+        }
+        #endregion
     }
 }

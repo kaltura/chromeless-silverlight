@@ -12,14 +12,15 @@ using System.Windows.Shapes;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Net.Sockets;
+using Microsoft.Web.Media.SmoothStreaming;
 
 namespace Player
 {
-    public class MulticastPlayer : ProgressiveMediaElement , IMediaElement
+    public class MulticastPlayer : ProgressiveMediaElement, IMediaElement
     {
         private MulticastReceiver receiver;
-       
-        public MulticastPlayer(MediaElement element, string ip, Logger logger)
+
+        public MulticastPlayer(MediaElement element, IDictionary<string, string> initParams, Logger logger)
             : base(element,logger.clone("McastPlayer"))
         {
             logger.info("c-tor");
@@ -30,12 +31,7 @@ namespace Player
             this.receiver.EndJoinGroup += receiver_EndJoinGroup;
             this.receiver.ReceivedFirstPacket += receiver_ReceivedFirstPacket;
             this.receiver.setMediaPlayer(this.element);
-            Dictionary<string, string> param = new Dictionary<string, string>();
-            if (!String.IsNullOrEmpty(ip))
-            {
-                param.Add("streamAddress", ip);
-            }
-            this.receiver.init(param);
+            this.receiver.init(initParams);
             this.element.Volume = 1.0;
         }
 

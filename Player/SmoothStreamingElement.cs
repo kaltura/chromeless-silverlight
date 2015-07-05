@@ -15,14 +15,14 @@ using MediaStreamSrc.Classes;
 
 namespace Player
 {
-    public class SmoothStreamingElement: IMediaElement          
+    public class SmoothStreamingElement: IMediaElement    , IDisposable       
     {
         public SmoothStreamingMediaElement element { get; set; }
 
         private StreamInfo playingStream;
         private List<TrackInfo> tracks;
         private List<StreamInfo> audioTracks;
-        Logger logger; 
+        protected Logger logger; 
         public SmoothStreamingElement(SmoothStreamingMediaElement element,Logger logger)
         {
             this.logger = logger;
@@ -86,6 +86,8 @@ namespace Player
 
         void element_PlaybackTrackChanged(object sender, TrackChangedEventArgs e)
         {
+            if (tracks == null)
+                return;
             SourceEventArgs args; 
             for (int i = 0; i < this.tracks.Count; i++)
             {
@@ -346,6 +348,21 @@ namespace Player
             {
                 return element.BufferingProgress;
             }
+        }
+        #endregion
+
+        #region IDisposable
+        ~SmoothStreamingElement()
+        {
+            Dispose(false);
+        }
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        protected virtual void Dispose(bool disposing)
+        {
         }
         #endregion
     }

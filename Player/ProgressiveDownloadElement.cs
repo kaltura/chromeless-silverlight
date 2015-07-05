@@ -70,8 +70,7 @@ namespace Player
 
         void element_MediaFailed(object sender, ExceptionRoutedEventArgs e)
         {
-            this.logger.info("element_MediaFailed"); 
-   
+            this.logger.info("element_MediaFailed: {0}", e.ErrorException.Message);
             if (MediaFailed != null)
             {
                 MediaFailed(sender, e);
@@ -148,7 +147,7 @@ namespace Player
 
         public void Play()
         {
-            this.logger.info("Play"); 
+            this.logger.info("Play cur satte={0}", element.CurrentState); 
   
             element.Play();
         }

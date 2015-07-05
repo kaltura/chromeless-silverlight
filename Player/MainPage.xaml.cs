@@ -47,6 +47,7 @@ namespace Player
         private string _challengeCustomData;
         private bool _enableSmoothStreamPlayer;
         private bool _enableMultiCastPlayer;
+        private IDictionary<string, string> _initParams;
      
         private IMediaElement media = null;
         private string _ip;
@@ -94,9 +95,11 @@ namespace Player
             cleanup();
         }
 
+        static Random idGen = new Random(Environment.TickCount);
+
         private void ChoosePlayer()
         {
-            Logger logger = new Logger(string.Format("{0}-{1}", Guid.NewGuid(), _ip));
+            Logger logger = new Logger(string.Format("{0}-{1}", idGen.Next() % long.MaxValue, _ip));
 
             progressive_media.Visibility =  System.Windows.Visibility.Collapsed;
             SmoothStream_media.Visibility = System.Windows.Visibility.Collapsed;
@@ -110,7 +113,7 @@ namespace Player
             if (_enableMultiCastPlayer)
             {
                 progressive_media.Visibility = System.Windows.Visibility.Visible;
-                media = new MulticastPlayer(progressive_media, _ip, logger);
+                media = new MulticastPlayer(progressive_media, _initParams, logger);
                 WriteDebug("ChoosePlayer : MultiCast player");
                 return;
             }
@@ -169,6 +172,8 @@ namespace Player
         /// <param name="initParams"></param>
         private void HandleInitParams(IDictionary<string, string> initParams)
         {
+            _initParams = new Dictionary<string, string>(initParams);
+
             if (initParams.ContainsKey("licenseURL"))
                 _licenseURL = initParams["licenseURL"];
 
@@ -217,6 +222,7 @@ namespace Player
             if (initParams.ContainsKey("height"))
                 Int32.TryParse(initParams["height"], out _height);
 
+   
             if (initParams.ContainsKey("timerate"))
                 Int32.TryParse(initParams["timerrate"], out _timerRate);
 
@@ -235,7 +241,6 @@ namespace Player
                 {
                     _ip = initParams["streamAddress"];
                 }
-         
             }
 
         }
@@ -605,8 +610,8 @@ namespace Player
             if (_enableMultiCastPlayer)
             {
                 cleanup();
-                Logger logger = new Logger(string.Format("{0}-{1}", Guid.NewGuid(), _ip));
-                media = new MulticastPlayer(progressive_media, _ip, logger);
+                Logger logger = new Logger(string.Format("{0}-{1}", idGen.Next() % long.MaxValue, _ip));
+                media = new MulticastPlayer(progressive_media,_initParams, logger);
             }
         }
 

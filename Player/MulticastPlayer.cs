@@ -132,5 +132,29 @@ namespace Player
             }
         }
         #endregion
+        
+        System.Collections.IDictionary IMediaElement.GetDiagnostics()
+        {
+            Dictionary<string, string> diags = new Dictionary<string, string>();
+            if (this.element != null)
+            {
+                try
+                {
+                    diags[DiagnosticsConstants.RenderedFramesPerSecond] = this.element.RenderedFramesPerSecond.ToString("N2");
+                    diags[DiagnosticsConstants.DroppedFramesPerSecond] = this.element.DroppedFramesPerSecond.ToString("N2");
+                    DiagnosticsInfo info;
+                    this.receiver.GetDiagnostics(out info);
+                    diags[DiagnosticsConstants.InputFrameRate] = info.inputFrameRate.ToString("N2");
+                    diags[DiagnosticsConstants.MulticastAddress] = info.streamAdress;
+                    diags[DiagnosticsConstants.CurrentBitrate] = (info.currentBitRate / 1024).ToString("N2") + " Kbps";
+                }
+                catch(Exception e)
+                {
+                    this.logger.warn("diagnostics error: {0}", e);
+                }
+            }   
+            return diags;
+        }
+    
     }
 }

@@ -751,5 +751,12 @@ namespace Player
                 return media.Position.TotalSeconds;
             }
         }
+
+
+        [ScriptableMember]
+        public IDictionary getDiagnostics()
+        {
+            return media.GetDiagnostics();
+        }
     }
 }

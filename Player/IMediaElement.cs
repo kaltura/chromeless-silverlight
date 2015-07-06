@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Net;
 using System.Windows;
 using System.Windows.Controls;
@@ -77,5 +78,16 @@ namespace Player
         Double Width { get; set; }
 
         Double Height { get; set; }
+
+        IDictionary GetDiagnostics();
+    }
+
+    static internal class DiagnosticsConstants
+    {
+        public static readonly string RenderedFramesPerSecond = "RenderFps";
+        public  static readonly string DroppedFramesPerSecond = "RenderDroppedFps";
+        public static readonly string CurrentBitrate = "currentBitrate";
+        public static readonly string MulticastAddress = "mcAddress";
+        public static readonly string InputFrameRate = "InputFps";
     }
 }

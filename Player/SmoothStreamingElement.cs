@@ -365,5 +365,11 @@ namespace Player
         {
         }
         #endregion
+
+
+        public System.Collections.IDictionary GetDiagnostics()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

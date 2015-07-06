@@ -1,5 +1,6 @@
 ﻿using MediaStreamSrc.Classes;
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Windows;
 using System.Windows.Controls;
@@ -300,5 +301,10 @@ namespace Player
         {
         }
         #endregion
+
+        public System.Collections.IDictionary GetDiagnostics()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

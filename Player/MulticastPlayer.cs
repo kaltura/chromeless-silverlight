@@ -149,6 +149,14 @@ namespace Player
                         diags[DiagnosticsConstants.InputFrameRate] = info.inputFrameRate.ToString("N2");
                         diags[DiagnosticsConstants.MulticastAddress] = info.streamAdress;
                         diags[DiagnosticsConstants.CurrentBitrate] = (info.currentBitRate / 1024).ToString("N2") + " Kbps";
+                        
+                        int droppedPackets = (int)(info.videoLostPackets + info.audioLostPackets),
+                            receivedPackets = (int)(info.videoTotalPackets + info.audioTotalPackets);
+                        double dropRate = receivedPackets > 0 ? droppedPackets / (double)receivedPackets : 0.0;
+               
+                        diags[DiagnosticsConstants.PacketLoss] = droppedPackets.ToString();
+                        diags[DiagnosticsConstants.PacketRate] = receivedPackets.ToString() ;
+                        diags[DiagnosticsConstants.PacketLossRate] = dropRate.ToString("N2");
                     }
                 }
                 catch(Exception e)

@@ -38,4 +38,4 @@ where TracingConfig.xml looks like:
 </TracingConfiguration>
 
 
-https://social.msdn.microsoft.com/Forums/windowsapps/en-US/7e1fa914-c062-41de-8712-b50eca31b2d9/cannot-find-file-tracingconfigxml-in-the-application-xap-package?forum=wpdevelop
+for more info see https://social.msdn.microsoft.com/Forums/windowsapps/en-US/7e1fa914-c062-41de-8712-b50eca31b2d9/cannot-find-file-tracingconfigxml-in-the-application-xap-package?forum=wpdevelop

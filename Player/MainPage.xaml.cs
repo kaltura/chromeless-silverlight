@@ -755,6 +755,10 @@ namespace Player
         [ScriptableMember]
         public IDictionary getDiagnostics()
         {
+            if (media == null)
+            {
+                return null;
+            }
             return media.GetDiagnostics();
         }
     }

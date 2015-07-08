@@ -9,7 +9,7 @@ echo adding tracingconfig.xml" to Player.xap
 "c:\Program Files\7-Zip\7z.exe" a $(TargetDir)Player.xap $(ProjectDir)TracingConfig.xml
 
 where TracingConfig.xml looks like:
-
+"
 <?xml version="1.0" encoding="utf-8" ?>
 <TracingConfiguration
           enabled="true"
@@ -36,5 +36,6 @@ where TracingConfig.xml looks like:
     <remove level="FunctionExit" />
   </TraceLevels>
 </TracingConfiguration>
+"
 
 https://social.msdn.microsoft.com/Forums/windowsapps/en-US/7e1fa914-c062-41de-8712-b50eca31b2d9/cannot-find-file-tracingconfigxml-in-the-application-xap-package?forum=wpdevelop

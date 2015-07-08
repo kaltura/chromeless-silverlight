@@ -300,7 +300,7 @@ namespace Player
              */
             if (mapJSBindings.Keys.Contains(eventName))
             {
-                logger.info(String.Format("Trigger {0} with param {1}", eventName, param));
+                logger.info("Trigger "+ eventName + " with param "+ param);
                 for (int i = 0; i < mapJSBindings[eventName].Count; i++)
                 {
                     try

@@ -48,6 +48,7 @@ namespace Player
         private bool _enableSmoothStreamPlayer;
         private bool _enableMultiCastPlayer;
         private IDictionary<string, string> _initParams;
+        private Logger logger;
      
         private IMediaElement media = null;
         private string _ip;
@@ -82,7 +83,7 @@ namespace Player
                 }
                 catch (Exception e)
                 {
-                    WriteDebug("Error occur while trying to call readyCallBack function:" + e.Message);
+                    logger.info("Error occur while trying to call readyCallBack function:" + e.Message);
                 }
             }
 
@@ -99,7 +100,7 @@ namespace Player
 
         private void ChoosePlayer()
         {
-            Logger logger = new Logger(string.Format("{0}-{1}", idGen.Next() % long.MaxValue, _ip));
+            
 
             progressive_media.Visibility =  System.Windows.Visibility.Collapsed;
             SmoothStream_media.Visibility = System.Windows.Visibility.Collapsed;
@@ -107,14 +108,14 @@ namespace Player
             {
                 SmoothStream_media.Visibility = System.Windows.Visibility.Visible;
                 media = new SmoothStreamingElement(SmoothStream_media, logger);
-                WriteDebug("ChoosePlayer : SmoothStream player");
+                logger.info("ChoosePlayer : SmoothStream player");
                 return;
             }
             if (_enableMultiCastPlayer)
             {
                 progressive_media.Visibility = System.Windows.Visibility.Visible;
                 media = new MulticastPlayer(progressive_media, _initParams, logger);
-                WriteDebug("ChoosePlayer : MultiCast player");
+                logger.info("ChoosePlayer : MultiCast player");
                 return;
             }
 
@@ -122,7 +123,7 @@ namespace Player
             progressive_media.Visibility = System.Windows.Visibility.Visible;
             media = new ProgressiveMediaElement(progressive_media, logger);
 
-            WriteDebug("ChoosePlayer : Progressive download player");
+            logger.info("ChoosePlayer : Progressive download player");
         }
 
         /// <summary>
@@ -242,7 +243,7 @@ namespace Player
                     _ip = initParams["streamAddress"];
                 }
             }
-
+            this.logger = new Logger(string.Format("{0}-{1}", idGen.Next() % long.MaxValue, _ip));
         }
 
         /// <summary>
@@ -281,13 +282,6 @@ namespace Player
             _timer.Stop();
         }
 
-        private void WriteDebug(string text)
-        {
-            tb_debug.Text += text + "\n";
-
-            MediaStreamSrc.Model.WMSLoggerFactory.getLogger(null).debug(text);
-        }
-
         private void SendEvent(string eventName,string param = null)
         {
             /*
@@ -306,7 +300,7 @@ namespace Player
              */
             if (mapJSBindings.Keys.Contains(eventName))
             {
-                WriteDebug(String.Format("Trigger {0} with param {1}", eventName, param));
+                logger.info(String.Format("Trigger {0} with param {1}", eventName, param));
                 for (int i = 0; i < mapJSBindings[eventName].Count; i++)
                 {
                     try
@@ -315,7 +309,7 @@ namespace Player
                     }
                     catch (Exception e)
                     {
-                        WriteDebug("Error occur while trying to trig function:" + e.Message);
+                        logger.info("Error occur while trying to trig function:" + e.Message);
                     } 
                 }
             }
@@ -355,7 +349,7 @@ namespace Player
         void _timer_Tick(object sender, EventArgs e)
         {
             var time = CurrentTimeInSeconds + TimeOffsetInSeconds;
-            WriteDebug("playerUpdatePlayhead " + TimeSpan.FromSeconds(time));
+            logger.info("playerUpdatePlayhead " + TimeSpan.FromSeconds(time));
 
             SendEvent("playerUpdatePlayhead", time.ToString());
         }
@@ -367,7 +361,7 @@ namespace Player
 
         void media_MediaFailed(object sender, ExceptionRoutedEventArgs e)
         {
-            WriteDebug(e.ErrorException.Message);
+            logger.info(e.ErrorException.Message);
             SendEvent("alert", e.ErrorException.Message);
         }
 
@@ -386,7 +380,7 @@ namespace Player
         void media_CurrentStateChanged(object sender, RoutedEventArgs e)
         {
 
-            WriteDebug("state:" + media.CurrentState.ToString());
+            logger.info("state:" + media.CurrentState.ToString());
 
             switch (media.CurrentState)
             {
@@ -411,7 +405,7 @@ namespace Player
                     // special settings to allow play() to work
                     _isLoading = false;
                     StopTimer();
-                    WriteDebug("paused event, " + _isAttemptingToPlay);
+                    logger.info("paused event, " + _isAttemptingToPlay);
                     if (_isAttemptingToPlay)
                     {
                         System.Windows.Threading.DispatcherTimer playTimer = new System.Windows.Threading.DispatcherTimer();
@@ -536,7 +530,7 @@ namespace Player
         [ScriptableMember]
         public void playMedia()
         {
-            WriteDebug("method:play " + media.CurrentState );
+            logger.info("method:play " + media.CurrentState );
 
             // sometimes people forget to call load() first
             if (!_enableMultiCastPlayer && (media.CurrentState == MediaElementState.Closed || (_mediaUrl != "" && media.Source == null)))
@@ -548,11 +542,16 @@ namespace Player
             // store and trigger with the state change above
             if (media.CurrentState == MediaElementState.Closed && _isLoading)
             {
-                WriteDebug("storing _isAttemptingToPlay ");
+                logger.info("storing _isAttemptingToPlay ");
                 _isAttemptingToPlay = true;
             }
             else
             {
+                if (_enableMultiCastPlayer && media.CurrentState == MediaElementState.Stopped)
+                {
+                    reloadMedia();
+                }
+                
                 media.Play();
                 _isEnded = false;
                 _isPaused = false;
@@ -563,7 +562,7 @@ namespace Player
         [ScriptableMember]
         public void pauseMedia()
         {
-            WriteDebug("method:pause " + media.CurrentState);
+            logger.info("method:pause " + media.CurrentState);
 
             _isEnded = false;
             _isPaused = true;
@@ -579,10 +578,10 @@ namespace Player
             _isLoading = true;
             _firedCanPlay = false;
 
-            WriteDebug("method:load " + media.CurrentState);
+            logger.info("method:load " + media.CurrentState);
             if (!String.IsNullOrEmpty(_mediaUrl))
             {
-                WriteDebug(" - " + _mediaUrl.ToString());
+                logger.info(" - " + _mediaUrl.ToString());
             }
             if (!String.IsNullOrEmpty(_licenseURL))
             {
@@ -606,11 +605,11 @@ namespace Player
         [ScriptableMember]
         public void reloadMedia()
         {
-            WriteDebug("method:reloadMedia " + media.CurrentState);
+            logger.info("method:reloadMedia " + media.CurrentState);
             if (_enableMultiCastPlayer)
             {
                 cleanup();
-                Logger logger = new Logger(string.Format("{0}-{1}", idGen.Next() % long.MaxValue, _ip));
+               
                 media = new MulticastPlayer(progressive_media,_initParams, logger);
             }
         }
@@ -618,7 +617,7 @@ namespace Player
         [ScriptableMember]
         public void stopMedia()
         {
-            WriteDebug("method:stop " + media.CurrentState);
+            logger.info("method:stop " + media.CurrentState);
 
             _isEnded = true;
             _isPaused = false;
@@ -630,7 +629,7 @@ namespace Player
         [ScriptableMember]
         public void setVolume(Double volume)
         {
-            WriteDebug("method:setvolume: " + volume.ToString());
+            logger.info("method:setvolume: " + volume.ToString());
 
             media.Volume = volume;
 
@@ -640,7 +639,7 @@ namespace Player
         [ScriptableMember]
         public void setMuted(bool isMuted)
         {
-            WriteDebug("method:setmuted: " + isMuted.ToString());
+            logger.info("method:setmuted: " + isMuted.ToString());
 
             media.IsMuted = isMuted;
             if (isMuted)
@@ -658,7 +657,7 @@ namespace Player
         [ScriptableMember]
         public void setCurrentTime(Double position)
         {
-            WriteDebug("method:setCurrentTime: " + position.ToString());
+            logger.info("method:setCurrentTime: " + position.ToString());
 
             int milliseconds = Convert.ToInt32(position * 1000);
 

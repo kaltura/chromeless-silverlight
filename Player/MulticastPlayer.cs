@@ -154,9 +154,8 @@ namespace Player
                             receivedPackets = (int)(info.videoTotalPackets + info.audioTotalPackets);
                         double dropRate = receivedPackets > 0 ? droppedPackets / (double)receivedPackets : 0.0;
                
-                        diags[DiagnosticsConstants.PacketLoss] = droppedPackets.ToString();
+                        diags[DiagnosticsConstants.PacketLoss] = string.Format( "{0} ({1:N2} %)",droppedPackets,dropRate);
                         diags[DiagnosticsConstants.PacketRate] = receivedPackets.ToString() ;
-                        diags[DiagnosticsConstants.PacketLossRate] = dropRate.ToString("N2");
                     }
                 }
                 catch(Exception e)

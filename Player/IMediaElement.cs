@@ -90,7 +90,6 @@ namespace Player
         public static readonly string MulticastAddress = "mcAddress";
         public static readonly string InputFrameRate = "InputFps";
         public static readonly string PacketLoss = "PacketLoss";
-        public static readonly string PacketLossRate = "PacketLossRate";
         public static readonly string PacketRate = "PacketRate";
     }
 }

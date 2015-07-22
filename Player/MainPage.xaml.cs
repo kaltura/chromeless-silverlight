@@ -163,7 +163,7 @@ namespace Player
         private void HandleInitParams(IDictionary<string, string> initParams)
         {
             if (initParams.ContainsKey("licenseURL"))
-                _licenseURL = initParams["licenseURL"];
+                _licenseURL = HttpUtility.UrlDecode(initParams["licenseURL"]);
 
             if (initParams.ContainsKey("challengeCustomData"))
                 _challengeCustomData = initParams["challengeCustomData"];
@@ -172,7 +172,7 @@ namespace Player
                 _playerId = initParams["playerId"];
 
             if (initParams.ContainsKey("entryURL"))
-                _mediaUrl = initParams["entryURL"];
+                _mediaUrl = HttpUtility.UrlDecode(initParams["entryURL"]);
 
             if (initParams.ContainsKey("autoplay") && initParams["autoplay"] == "true")
                 _autoplay = true;

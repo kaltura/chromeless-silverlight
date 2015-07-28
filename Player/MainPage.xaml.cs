@@ -50,6 +50,10 @@ namespace Player
         private IDictionary<string, string> _initParams;
         private Logger logger;
      
+        private bool _isLive = false;
+        private bool _isDVR = false;
+        private bool _shouldReload = false;
+
         private IMediaElement media = null;
         private string _ip;
        
@@ -176,7 +180,7 @@ namespace Player
             _initParams = new Dictionary<string, string>(initParams);
 
             if (initParams.ContainsKey("licenseURL"))
-                _licenseURL = initParams["licenseURL"];
+                _licenseURL = HttpUtility.UrlDecode(initParams["licenseURL"]);
 
             if (initParams.ContainsKey("challengeCustomData"))
                 _challengeCustomData = initParams["challengeCustomData"];
@@ -185,7 +189,7 @@ namespace Player
                 _playerId = initParams["playerId"];
 
             if (initParams.ContainsKey("entryURL"))
-                _mediaUrl = initParams["entryURL"];
+                _mediaUrl = HttpUtility.UrlDecode(initParams["entryURL"]);
 
             if (initParams.ContainsKey("autoplay") && initParams["autoplay"] == "true")
                 _autoplay = true;
@@ -244,6 +248,13 @@ namespace Player
                 }
             }
             this.logger = new Logger(string.Format("{0}-{1}", idGen.Next() % long.MaxValue, _ip));
+
+            if (initParams.ContainsKey("isLive") && initParams["isLive"] == "true")
+                _isLive = true;
+
+            if (initParams.ContainsKey("isDVR") && initParams["isDVR"] == "true")
+                _isDVR = true;
+
         }
 
         /// <summary>
@@ -258,18 +269,25 @@ namespace Player
             media.MediaEnded += media_MediaEnded;
             media.MediaFailed += media_MediaFailed;
             media.MediaOpened += media_MediaOpened;
-            media.BitratesReady += media_BitratesReady;
-            media.AudioTracksReady += media_AudioTracksReady;
-            media.SourceChanged += media_SourceChanged;
-     
+
+            if (media is SmoothStreamingElement)
+            {
+                SmoothStreamingElement ssMedia = media as SmoothStreamingElement;
+                ssMedia.BitratesReady += media_BitratesReady;
+                ssMedia.AudioTracksReady += media_AudioTracksReady;
+                ssMedia.TextTracksReady += media_TextTracksReady;
+                ssMedia.SourceChanged += media_SourceChanged;
+                ssMedia.MarkerReached += media_MarkerReached;
+                ssMedia.TextTrackLoaded += media_TextTrackLoaded;
+            }
+            
+  
           //  media.MouseLeftButtonDown += media_MouseLeftButtonDown;
 
             if (!_disableOnScreenClick)
             {
                 media.MouseLeftButtonUp += media_MouseLeftButtonUp;
             }
-            
-
         }
 
         private void StartTimer()
@@ -280,6 +298,13 @@ namespace Player
         private void StopTimer()
         {
             _timer.Stop();
+        }
+
+        private void WriteDebug(string text)
+        {
+            tb_debug.Text += text + "\n";
+
+            MediaStreamSrc.Model.WMSLoggerFactory.getLogger(null).debug(text);
         }
 
         private void SendEvent(string eventName,string param = null)
@@ -338,7 +363,7 @@ namespace Player
                         playMedia();
                         break;
                     case MediaElementState.Stopped:
-
+                        playMedia();
                         break;
                     case MediaElementState.Buffering:
                         pauseMedia();
@@ -362,7 +387,7 @@ namespace Player
         void media_MediaFailed(object sender, ExceptionRoutedEventArgs e)
         {
             logger.info(e.ErrorException.Message);
-            SendEvent("alert", e.ErrorException.Message);
+            SendEvent("error", "{\"errorMessage\":\"" + e.ErrorException.Message + "\", \"stackTrace\":\"" + e.ErrorException.StackTrace + "\"}" );
         }
 
         void media_MediaEnded(object sender, RoutedEventArgs e)
@@ -456,6 +481,21 @@ namespace Player
 
         void media_AudioTracksReady(object sender, ManifestEventArgs e)
         {
+            SendEvent("audioTracksReceived", parseLanguages(e));
+            //notify default audio index
+            SendEvent("audioTrackSelected", "{\"index\":" + (media as SmoothStreamingElement).getCurrentAudioIndex() + "}");
+        }
+
+        void media_TextTracksReady(object sender, ManifestEventArgs e)
+        {
+            SendEvent("textTracksReceived", parseLanguages(e));
+        }
+
+        /**
+         * parse given args to languages string
+         * */
+        private string parseLanguages( ManifestEventArgs e )
+        {
             List<Object> tracks = e.Flavors;
             String languages = "";
             if (tracks != null)
@@ -464,18 +504,16 @@ namespace Player
                 for (int i = 0; i < tracks.Count; i++)
                 {
                     ((StreamInfo)tracks.ElementAt(i)).Attributes.TryGetValue("Name", out langName);
-                    languages += "{\"name\":\"" + langName + "\",\"index\":" + i + "}";
+                    languages += "{\"label\":\"" + langName + "\",\"index\":" + i + "}";
                     if (i < tracks.Count - 1)
                     {
                         languages += ",";
                     }
                 }
             }
-
             languages = "{\"languages\":[" + languages + "]}";
-            SendEvent("audioTracksReceived", languages);
-            //notify default audio index
-            SendEvent("audioTrackSelected", "{\"index\":" + (media as SmoothStreamingElement).getCurrentAudioIndex() + "}");
+
+            return languages;
         }
 
         void media_BitratesReady(object sender, ManifestEventArgs e)
@@ -486,7 +524,12 @@ namespace Player
             {
                 for (int i = 0; i < tracks.Count; i++)
                 {
-                    bitrates += "{\"type\":\"video/ism\",\"assetid\":" + "\"ism_" + i + "\""+ ",\"bandwidth\":" + ((TrackInfo) tracks.ElementAt(i)).Bitrate + ",\"height\":0}";
+                    int height = 0;
+                    if (((TrackInfo)tracks.ElementAt(i)).Attributes.ContainsKey("MaxHeight"))
+                    {
+                        Int32.TryParse(((TrackInfo)tracks.ElementAt(i)).Attributes["MaxHeight"], out height);
+                    }
+                    bitrates += "{\"type\":\"video/ism\",\"assetid\":" + "\"ism_" + i + "\"" + ",\"bandwidth\":" + ((TrackInfo)tracks.ElementAt(i)).Bitrate + ",\"height\":" + height + "}";
                     if (i < tracks.Count - 1)
                     {
                         bitrates += ",";
@@ -501,6 +544,16 @@ namespace Player
         void media_SourceChanged(object sender, SourceEventArgs e)
         {
             SendEvent("switchingChangeComplete", "{\"newIndex\":" + e.NewIndex + "}");
+        }
+
+        void media_MarkerReached(object sender, TimelineMarkerRoutedEventArgs e)
+        {
+            SendEvent("loadEmbeddedCaptions", "{\"language\":\"" + e.Marker.Type + "\", \"ttml\":\"" + HttpUtility.HtmlEncode(Uri.EscapeUriString(e.Marker.Text)) + "\"}");
+        }
+
+        void media_TextTrackLoaded(object sender, SourceEventArgs e)
+        {
+            SendEvent("textTrackSelected", "{\"index\":" + e.NewIndex + ", \"ttml\":\"" +  HttpUtility.HtmlEncode( Uri.EscapeUriString (e.Text)) + "\"}");
         }
 
         #endregion
@@ -533,14 +586,15 @@ namespace Player
             logger.info("method:play " + media.CurrentState );
 
             // sometimes people forget to call load() first
-            if (!_enableMultiCastPlayer && (media.CurrentState == MediaElementState.Closed || (_mediaUrl != "" && media.Source == null)))
+            if (_shouldReload || ( !_enableMultiCastPlayer && (media.CurrentState == MediaElementState.Closed || (_mediaUrl != "" && media.Source == null))))
             {
                 _isAttemptingToPlay = true;
+                _shouldReload = false;
                 loadMedia();
-            }
 
+            }
             // store and trigger with the state change above
-            if (media.CurrentState == MediaElementState.Closed && _isLoading)
+            else if (media.CurrentState == MediaElementState.Closed && _isLoading)
             {
                 logger.info("storing _isAttemptingToPlay ");
                 _isAttemptingToPlay = true;
@@ -567,7 +621,11 @@ namespace Player
             _isEnded = false;
             _isPaused = true;
 
-            media.Pause();
+            if (_isLive && !_isDVR)
+            {
+                _shouldReload = true;
+            }
+            media.Pause();    
             StopTimer();
           
         }
@@ -700,6 +758,15 @@ namespace Player
             {
                 (media as SmoothStreamingElement).selectAudioTrack(trackIndex);    
                 SendEvent("audioTrackSelected", "{\"index\":" + (media as SmoothStreamingElement).getCurrentAudioIndex() + "}");
+            }
+        }
+
+        [ScriptableMember]
+        public void selectTextTrack(int trackIndex)
+        {
+            if (media is SmoothStreamingElement)
+            {
+                (media as SmoothStreamingElement).selectTextTrack(trackIndex);
             }
         }
 

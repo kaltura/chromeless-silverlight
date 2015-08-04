@@ -721,6 +721,11 @@ namespace Player
 
             SendEvent("playerSeekStart","0");
             media.Position = new TimeSpan(0, 0, 0, 0, milliseconds);
+            //Send the event here so if we are paused the event will still be dispatched
+            var time = CurrentTimeInSeconds + TimeOffsetInSeconds;
+            WriteDebug("playerUpdatePlayhead " + TimeSpan.FromSeconds(time));
+            SendEvent("playerUpdatePlayhead", time.ToString());
+            
             SendEvent("playerSeekEnd",media.Position.TotalSeconds.ToString());
         }
 

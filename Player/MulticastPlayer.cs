@@ -13,26 +13,70 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Net.Sockets;
 using Microsoft.Web.Media.SmoothStreaming;
+using System.IO;
+using System.Threading;
+
 
 namespace Player
 {
+    public class MulticastInitFailedArgs : EventArgs
+    {
+        public string Description
+        {
+            private set;
+            get;
+        }
+        public MulticastInitFailedArgs(string description)
+        {
+            Description = description;
+        }
+    }
     public class MulticastPlayer : ProgressiveMediaElement, IMediaElement
     {
         private MulticastReceiver receiver;
+        IDictionary<string, string> initParams;
+        string m_streamUrl; 
+        
+        private System.Windows.Threading.DispatcherTimer m_keepAliveTimer = new System.Windows.Threading.DispatcherTimer();
+        private bool m_bDisposed=false;
+
+        static TimeSpan KeepAliveInterval = TimeSpan.FromSeconds(10);
+
+
+        public event EventHandler<MulticastInitFailedArgs> MulticastInitFailed; 
 
         public MulticastPlayer(MediaElement element, IDictionary<string, string> initParams, Logger logger)
             : base(element,logger.clone("McastPlayer"))
         {
             logger.info("c-tor");
 
+            this.initParams = initParams;
             this.element = element;
             this.receiver = new MulticastReceiver(logger);
             this.receiver.BeginJoinGroup += receiver_BeginJoinGroup;
             this.receiver.EndJoinGroup += receiver_EndJoinGroup;
             this.receiver.ReceivedFirstPacket += receiver_ReceivedFirstPacket;
             this.receiver.setMediaPlayer(this.element);
-            this.receiver.init(initParams);
             this.element.Volume = 1.0;
+
+            m_keepAliveTimer.Tick += KeepAlive;
+            m_keepAliveTimer.Interval = KeepAliveInterval;
+        }
+
+
+
+        public void Init()
+        {
+            m_streamUrl = this.initParams["streamAddress"];
+            if (m_streamUrl.StartsWith("http"))
+            {
+                KeepAlive(null, EventArgs.Empty);
+            }
+            else
+            {
+                m_streamInfo = MulticastStreamInfo.FromDictionary(this.initParams);
+                this.receiver.init(m_streamInfo);
+            }
         }
 
         public void stretchFill()
@@ -46,6 +90,17 @@ namespace Player
 
         void receiver_EndJoinGroup(string streamAddress, int streamPort, bool isSuccessful, string errorStr)
         {
+            if (!isSuccessful)
+            {
+                try
+                {
+                    MulticastInitFailed(this, new MulticastInitFailedArgs(errorStr));
+                }
+                catch
+                {
+
+                }
+            }
         }
 
         void receiver_BeginJoinGroup(string streamAddress, int streamPort)
@@ -118,6 +173,8 @@ namespace Player
             {
                 if (receiver != null)
                 {
+                    m_keepAliveTimer.Stop();
+                    m_bDisposed = true;
                     receiver.stopPlayer();
                     this.receiver.BeginJoinGroup -= receiver_BeginJoinGroup;
                     this.receiver.EndJoinGroup -= receiver_EndJoinGroup;
@@ -165,7 +222,66 @@ namespace Player
             }   
             return diags;
         }
-    
 
+        private MulticastStreamInfo m_streamInfo = null;
+        private void KeepAlive(object state, EventArgs args)
+        {
+            if (m_bDisposed)
+            {
+                return ;
+            }
+            m_keepAliveTimer.Stop();
+            var request = HttpWebRequest.CreateHttp(m_streamUrl);
+            request.BeginGetResponse(result =>
+            {
+                if (m_bDisposed)
+                {
+                    return;
+                }
+                MulticastStreamInfo newStreamInfo = null;
+                try
+                {
+                    var response = request.EndGetResponse(result);
+
+                    Stream dataStream = response.GetResponseStream();
+                    // Open the stream using a StreamReader for easy access.
+                    StreamReader reader = new StreamReader(dataStream);
+                    // Read the content.
+                    string responseFromServer = reader.ReadToEnd();
+
+                    newStreamInfo = MulticastStreamInfo.FromJson(responseFromServer);
+                }
+                catch (Exception e)
+                {
+                    logger.info("Exception in keep alive {0}", e);
+                }
+
+                Deployment.Current.Dispatcher.BeginInvoke(() =>
+                {
+                    try
+                    {
+                        if (m_bDisposed)
+                        {
+                            return;
+                        }
+
+
+                        if (m_streamInfo == null)
+                        {
+                            m_streamInfo = newStreamInfo;
+                            this.receiver.init(newStreamInfo);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        logger.info("Exception in keep alive {0}", e);
+                    }
+                    finally
+                    {
+                        m_keepAliveTimer.Start();
+                    }
+                });
+            }, null);
+        }
     }
 }

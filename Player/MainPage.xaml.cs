@@ -152,6 +152,10 @@ namespace Player
                 if (_autoplay || _preload != "none")
                     loadMedia();
             }
+            if (media is MulticastPlayer)
+            {
+                (media as MulticastPlayer).Init();
+            }
         }
 
         /// <summary>
@@ -281,6 +285,10 @@ namespace Player
                 ssMedia.TextTrackLoaded += media_TextTrackLoaded;
             }
             
+            if (media is MulticastPlayer)
+            {
+                (media as MulticastPlayer).MulticastInitFailed += MainPage_MulticastInitFailed;
+            }
   
           //  media.MouseLeftButtonDown += media_MouseLeftButtonDown;
 
@@ -289,6 +297,7 @@ namespace Player
                 media.MouseLeftButtonUp += media_MouseLeftButtonUp;
             }
         }
+
 
         private void StartTimer()
         {
@@ -388,6 +397,12 @@ namespace Player
         {
             logger.info(e.ErrorException.Message);
             SendEvent("error", "{\"errorMessage\":\"" + e.ErrorException.Message + "\", \"stackTrace\":\"" + e.ErrorException.StackTrace + "\"}" );
+        }
+        void MainPage_MulticastInitFailed(object sender, MulticastInitFailedArgs e)
+        {
+            logger.info(e.Description);
+            SendEvent("error", "{\"errorMessage\":\"" + e.Description + "\", \"stackTrace\":\"\"}");
+      
         }
 
         void media_MediaEnded(object sender, RoutedEventArgs e)

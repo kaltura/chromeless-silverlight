@@ -71,6 +71,7 @@
       <HintPath>.\multicast-silverlight-lib.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="System.Json, Version=5.0.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
     <Reference Include="System.Windows" />
     <Reference Include="system" />
     <Reference Include="System.Core">

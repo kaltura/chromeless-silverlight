@@ -178,18 +178,19 @@ namespace Player
 
         void element_PlaybackTrackChanged(object sender, TrackChangedEventArgs e)
         {
-            if (tracks == null)
-                return;
-            SourceEventArgs args; 
-            for (int i = 0; i < this.tracks.Count; i++)
+            if (this.tracks != null)	
             {
-                if (this.tracks[i].Bitrate == e.NewTrack.Bitrate)
+                SourceEventArgs args;		
+                for (int i = 0; i < this.tracks.Count; i++)
                 {
-                    args = new SourceEventArgs(i);
-                    SourceChanged(this, args);
-                    break;
+                    if (this.tracks[i].Bitrate == e.NewTrack.Bitrate)
+                    {
+                        args = new SourceEventArgs(i);
+                        SourceChanged(this, args);
+                        break;
+                    }
                 }
-            }       
+            }  
         }
 
         #region IMediaElement implementation

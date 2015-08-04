@@ -643,7 +643,7 @@ namespace Player
             }
             if (!String.IsNullOrEmpty(_licenseURL))
             {
-                media.LicenseAcquirer = new LicenseAcquirer();
+                media.LicenseAcquirer = new customLicenseAcquirer("media");
 
                 // Set the License URI to proper License Server address.
                 /*partnerId - mandatory

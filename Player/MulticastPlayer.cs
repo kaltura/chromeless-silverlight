@@ -12,28 +12,26 @@ using System.Windows.Shapes;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Net.Sockets;
+using Microsoft.Web.Media.SmoothStreaming;
 
 namespace Player
 {
-    public class MulticastPlayer : ProgressiveMediaElement
+    public class MulticastPlayer : ProgressiveMediaElement, IMediaElement
     {
         private MulticastReceiver receiver;
-        public MulticastPlayer(MediaElement element, string ip = null)
-            : base(element)
+
+        public MulticastPlayer(MediaElement element, IDictionary<string, string> initParams, Logger logger)
+            : base(element,logger.clone("McastPlayer"))
         {
+            logger.info("c-tor");
+
             this.element = element;
-            this.receiver = new MulticastReceiver();
+            this.receiver = new MulticastReceiver(logger);
             this.receiver.BeginJoinGroup += receiver_BeginJoinGroup;
             this.receiver.EndJoinGroup += receiver_EndJoinGroup;
             this.receiver.ReceivedFirstPacket += receiver_ReceivedFirstPacket;
             this.receiver.setMediaPlayer(this.element);
-            Dictionary<string, string> param = new Dictionary<string, string>();
-            if (!String.IsNullOrEmpty(ip))
-            {
-                param.Add("streamAddress", ip);
-            }
-            this.receiver.init(param);
-            this.element.BufferingTime = TimeSpan.FromSeconds(5);
+            this.receiver.init(initParams);
             this.element.Volume = 1.0;
         }
 
@@ -54,6 +52,25 @@ namespace Player
         {
         }
 
+        public double AverageBitRate
+        {
+            get
+            {
+                try
+                {
+                    var streamSource = receiver.getMediaSteramSource();
+                    if (streamSource != null)
+                    {
+                        return (streamSource as MediaStreamSourceMulticast).AverageBitRate;
+                    }
+                }
+                catch (Exception e)
+                {
+                    this.logger.warn("Exception in timeoffset " + e);
+                }
+                return 0;
+            }
+        }
 
         public TimeSpan TimeOffset
         {
@@ -69,12 +86,86 @@ namespace Player
                 }
                 catch (Exception e)
                 {
-                    MediaStreamSrc.Model.WMSLoggerFactory.getLogger(null).warn("Exception in timeoffset " + e);
+                    logger.warn("Exception in timeoffset " + e);
                 }
                 return TimeSpan.Zero;
             }
         }
 
+        public void Pause()
+        {
+            logger.info("Pause");
+
+            base.Pause();
+            receiver.pausePlayer();
+        }
+
+
+        public void Stop()
+        {
+            logger.info("Stop");
+
+            receiver.stopPlayer();
+            base.Stop();
+        }
+
+        #region IDisposable
+        protected override void Dispose(bool disposing)
+        {
+            logger.info("Dispose: disposing={0}", disposing);
+
+            if (disposing)
+            {
+                if (receiver != null)
+                {
+                    receiver.stopPlayer();
+                    this.receiver.BeginJoinGroup -= receiver_BeginJoinGroup;
+                    this.receiver.EndJoinGroup -= receiver_EndJoinGroup;
+                    this.receiver.ReceivedFirstPacket -= receiver_ReceivedFirstPacket;
+                    this.receiver.setMediaPlayer(null);
+                    if (receiver is IDisposable)
+                    {
+                        (receiver as IDisposable).Dispose();
+                    }
+                    receiver = null;
+                }
+            }
+        }
+        #endregion
+        
+        System.Collections.IDictionary IMediaElement.GetDiagnostics()
+        {
+            Dictionary<string, string> diags = new Dictionary<string, string>();
+            if (this.element != null)
+            {
+                try
+                {
+                    diags[DiagnosticsConstants.RenderedFramesPerSecond] = this.element.RenderedFramesPerSecond.ToString("N2");
+                    diags[DiagnosticsConstants.DroppedFramesPerSecond] = this.element.DroppedFramesPerSecond.ToString("N2");
+                    if (this.receiver != null)
+                    {
+                        DiagnosticsInfo info;
+                        this.receiver.GetDiagnostics(out info);
+                        diags[DiagnosticsConstants.InputFrameRate] = info.inputFrameRate.ToString("N2");
+                        diags[DiagnosticsConstants.MulticastAddress] = info.streamAdress;
+                        diags[DiagnosticsConstants.CurrentBitrate] = (info.currentBitRate / 1024).ToString("N2") + " Kbps";
+                        
+                        int droppedPackets = (int)(info.videoLostPackets + info.audioLostPackets),
+                            receivedPackets = (int)(info.videoTotalPackets + info.audioTotalPackets);
+                        double dropRate = receivedPackets > 0 ? droppedPackets / (double)receivedPackets : 0.0;
+               
+                        diags[DiagnosticsConstants.PacketLoss] = string.Format( "{0} ({1:N2} %)",droppedPackets,dropRate);
+                        diags[DiagnosticsConstants.PacketRate] = receivedPackets.ToString() ;
+                    }
+                }
+                catch(Exception e)
+                {
+                    this.logger.warn("diagnostics error: {0}", e);
+                }
+            }   
+            return diags;
+        }
+    
 
     }
 }

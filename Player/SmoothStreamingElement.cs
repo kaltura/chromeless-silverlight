@@ -11,19 +11,21 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 using System.Linq;
+using MediaStreamSrc.Classes;
 using System.Text;
 using System.Windows.Threading;
 using System.Xml.Linq;
 
 namespace Player
 {
-    public class SmoothStreamingElement: IMediaElement          
+    public class SmoothStreamingElement: IMediaElement    , IDisposable       
     {
         public SmoothStreamingMediaElement element { get; set; }
 
         private StreamInfo playingStream;
         private List<TrackInfo> tracks;
         private List<StreamInfo> audioTracks;
+        protected Logger logger; 
         private List<StreamInfo> textTracks;
         private List<ChunkInfo> textChunks;
         private StreamInfo currentTextTrack = null;
@@ -32,8 +34,9 @@ namespace Player
         private const int CAPT_FRAGMENT_COUNT = 20;
         private const int CAPT_TIMER_INTERVAL = 10; // seconds
 
-        public SmoothStreamingElement(SmoothStreamingMediaElement element)
+        public SmoothStreamingElement(SmoothStreamingMediaElement element, Logger logger)
         {
+            this.logger = logger;
             this.element = element;
             this.element.CurrentStateChanged += element_CurrentStateChanged;
             this.element.BufferingProgressChanged += element_BufferingProgressChanged;
@@ -175,9 +178,9 @@ namespace Player
 
         void element_PlaybackTrackChanged(object sender, TrackChangedEventArgs e)
         {
-            if (this.tracks != null)
+            if (this.tracks != null)	
             {
-                SourceEventArgs args;
+                SourceEventArgs args;		
                 for (int i = 0; i < this.tracks.Count; i++)
                 {
                     if (this.tracks[i].Bitrate == e.NewTrack.Bitrate)
@@ -186,8 +189,8 @@ namespace Player
                         SourceChanged(this, args);
                         break;
                     }
-                }  
-            }       
+                }
+            }  
         }
 
         #region IMediaElement implementation
@@ -539,5 +542,26 @@ namespace Player
             }
         }
         #endregion
+
+        #region IDisposable
+        ~SmoothStreamingElement()
+        {
+            Dispose(false);
+        }
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        protected virtual void Dispose(bool disposing)
+        {
+        }
+        #endregion
+
+
+        public System.Collections.IDictionary GetDiagnostics()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

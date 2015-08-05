@@ -83,6 +83,7 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
+    <Compile Include="customLicenseAcquirer.cs" />
     <Compile Include="ManifestEventArgs.cs" />
     <Compile Include="IMediaElement.cs" />
     <Compile Include="MainPage.xaml.cs">
@@ -122,4 +123,8 @@
       </FlavorProperties>
     </VisualStudio>
   </ProjectExtensions>
+  <PropertyGroup>
+    <PostBuildEvent>
+    </PostBuildEvent>
+  </PropertyGroup>
 </Project>

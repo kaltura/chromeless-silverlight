@@ -581,6 +581,15 @@ namespace Player
         }
 
         [ScriptableMember]
+        public void changeMulticastParams(string multicastGroup, string sourceAddress, bool multicastPolicyOverMulticastEnabled)
+        {
+            _initParams["streamAddress"] = multicastGroup;
+            _initParams["sourceAddress"] = sourceAddress;
+            _initParams["multicastPolicyOverMulticastEnabled"] = multicastPolicyOverMulticastEnabled.ToString();
+            reloadMedia();
+        }
+
+        [ScriptableMember]
         public void playMedia()
         {
             logger.info("method:play " + media.CurrentState );

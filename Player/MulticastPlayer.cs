@@ -20,6 +20,19 @@ namespace Player
     {
         private MulticastReceiver receiver;
 
+        public event EventHandler<DateTimeArgs> SyncPointPlayed
+        {
+            add
+            {
+                receiver.SyncPointPlayed += value;
+            }
+            // Remove the input delegate from the collection.
+            remove
+            {
+                receiver.SyncPointPlayed -= value;
+            }
+        }   
+
         public MulticastPlayer(MediaElement element, IDictionary<string, string> initParams, Logger logger)
             : base(element,logger.clone("McastPlayer"))
         {

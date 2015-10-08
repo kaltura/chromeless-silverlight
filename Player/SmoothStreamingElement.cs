@@ -563,5 +563,8 @@ namespace Player
         {
             throw new NotImplementedException();
         }
+
+
+        public event EventHandler<DateTimeArgs> SyncPointPlayed;
     }
 }

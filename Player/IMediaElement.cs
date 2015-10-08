@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MediaStreamSrc.Classes;
+using System;
 using System.Collections;
 using System.Net;
 using System.Windows;
@@ -24,6 +25,8 @@ namespace Player
         AcquiringLicense = 7,
         ClipPlaying = 100,
     }
+      
+
     public interface IMediaElement
     {
          MediaElementState CurrentState { get;  }
@@ -53,6 +56,8 @@ namespace Player
          event EventHandler<RoutedEventArgs> MediaOpened;
 
          event  EventHandler<MouseButtonEventArgs> MouseLeftButtonUp;
+
+         event EventHandler<DateTimeArgs> SyncPointPlayed;
 
         void Play();
 

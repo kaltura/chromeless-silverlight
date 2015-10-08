@@ -269,6 +269,7 @@ namespace Player
             media.MediaEnded += media_MediaEnded;
             media.MediaFailed += media_MediaFailed;
             media.MediaOpened += media_MediaOpened;
+            media.SyncPointPlayed += media_SyncPointPlayed;
 
             if (media is SmoothStreamingElement)
             {
@@ -290,6 +291,18 @@ namespace Player
             }
         }
 
+        public event EventHandler<DateTimeArgs> SyncPointPlayed
+        {
+            add
+            {
+                media.SyncPointPlayed += value;
+            }
+            // Remove the input delegate from the collection.
+            remove
+            {
+                media.SyncPointPlayed -= value;
+            }
+        }   
         private void StartTimer()
         {
             _timer.Start();
@@ -374,7 +387,7 @@ namespace Player
         void _timer_Tick(object sender, EventArgs e)
         {
             var time = CurrentTimeInSeconds + TimeOffsetInSeconds;
-            logger.info("playerUpdatePlayhead " + TimeSpan.FromSeconds(time));
+        //    logger.info("playerUpdatePlayhead " + TimeSpan.FromSeconds(time));
 
             SendEvent("playerUpdatePlayhead", time.ToString());
         }
@@ -393,6 +406,11 @@ namespace Player
         void media_MediaEnded(object sender, RoutedEventArgs e)
         {
             SendEvent("playerPlayEnd");
+        }
+
+        void media_SyncPointPlayed(object sender, DateTimeArgs e)
+        {
+            SendEvent("syncPointPlayed","{\"syncpoint\":\"" + e.CurrentTime.ToString() + "\"}");
         }
 
         void play_timer_tick(object sender, EventArgs e)
@@ -732,7 +750,7 @@ namespace Player
             media.Position = new TimeSpan(0, 0, 0, 0, milliseconds);
             //Send the event here so if we are paused the event will still be dispatched
             var time = CurrentTimeInSeconds + TimeOffsetInSeconds;
-            WriteDebug("playerUpdatePlayhead " + TimeSpan.FromSeconds(time));
+     //       WriteDebug("playerUpdatePlayhead " + TimeSpan.FromSeconds(time));
             SendEvent("playerUpdatePlayhead", time.ToString());
             
             SendEvent("playerSeekEnd",media.Position.TotalSeconds.ToString());

@@ -303,6 +303,6 @@ namespace Player
         }
 
 
-        public event EventHandler<DateTimeArgs> SyncPointPlayed;
+        public event EventHandler<UnixTimeArgs> SyncPointPlayed;
     }
 }

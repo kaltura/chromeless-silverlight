@@ -20,7 +20,7 @@ namespace Player
     {
         private MulticastReceiver receiver;
 
-        public event EventHandler<DateTimeArgs> SyncPointPlayed
+        public event EventHandler<UnixTimeArgs> SyncPointPlayed
         {
             add
             {

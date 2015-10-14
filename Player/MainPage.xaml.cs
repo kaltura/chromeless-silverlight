@@ -291,7 +291,7 @@ namespace Player
             }
         }
 
-        public event EventHandler<DateTimeArgs> SyncPointPlayed
+        public event EventHandler<UnixTimeArgs> SyncPointPlayed
         {
             add
             {
@@ -408,9 +408,9 @@ namespace Player
             SendEvent("playerPlayEnd");
         }
 
-        void media_SyncPointPlayed(object sender, DateTimeArgs e)
+        void media_SyncPointPlayed(object sender, UnixTimeArgs e)
         {
-            SendEvent("syncPointPlayed","{\"syncpoint\":\"" + e.CurrentTime.ToString() + "\"}");
+            SendEvent("syncPointPlayed","{\"syncpoint\":\"" + e.Value.ToString() + "\"}");
         }
 
         void play_timer_tick(object sender, EventArgs e)

@@ -57,8 +57,6 @@ namespace Player
 
          event  EventHandler<MouseButtonEventArgs> MouseLeftButtonUp;
 
-         event EventHandler<UnixTimeArgs> SyncPointPlayed;
-
         void Play();
 
         void Pause();

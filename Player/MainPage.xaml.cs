@@ -160,7 +160,7 @@ namespace Player
         private void InitTimer()
         {
             if (_timerRate == 0)
-                _timerRate = 250;
+                _timerRate = 100;
 
             // timer
             _timer = new System.Windows.Threading.DispatcherTimer();
@@ -269,7 +269,6 @@ namespace Player
             media.MediaEnded += media_MediaEnded;
             media.MediaFailed += media_MediaFailed;
             media.MediaOpened += media_MediaOpened;
-            media.SyncPointPlayed += media_SyncPointPlayed;
 
             if (media is SmoothStreamingElement)
             {
@@ -291,18 +290,6 @@ namespace Player
             }
         }
 
-        public event EventHandler<UnixTimeArgs> SyncPointPlayed
-        {
-            add
-            {
-                media.SyncPointPlayed += value;
-            }
-            // Remove the input delegate from the collection.
-            remove
-            {
-                media.SyncPointPlayed -= value;
-            }
-        }   
         private void StartTimer()
         {
             _timer.Start();
@@ -384,11 +371,20 @@ namespace Player
                 }
             }
         }
+
         void _timer_Tick(object sender, EventArgs e)
         {
-            var time = CurrentTimeInSeconds + TimeOffsetInSeconds;
+            double time;
         //    logger.info("playerUpdatePlayhead " + TimeSpan.FromSeconds(time));
 
+            if (media is MulticastPlayer)
+            {
+                time = (media as MulticastPlayer).GetAbsoluteTime();
+            }
+            else
+            {
+                time = CurrentTimeInSeconds;
+            }
             SendEvent("playerUpdatePlayhead", time.ToString());
         }
        
@@ -407,12 +403,7 @@ namespace Player
         {
             SendEvent("playerPlayEnd");
         }
-
-        void media_SyncPointPlayed(object sender, UnixTimeArgs e)
-        {
-            SendEvent("syncPointPlayed","{\"syncpoint\":\"" + e.Value.ToString() + "\"}");
-        }
-
+        
         void play_timer_tick(object sender, EventArgs e)
         {
             ((DispatcherTimer)sender).Stop();
@@ -749,7 +740,7 @@ namespace Player
             SendEvent("playerSeekStart","0");
             media.Position = new TimeSpan(0, 0, 0, 0, milliseconds);
             //Send the event here so if we are paused the event will still be dispatched
-            var time = CurrentTimeInSeconds + TimeOffsetInSeconds;
+            var time = CurrentTimeInSeconds;
      //       WriteDebug("playerUpdatePlayhead " + TimeSpan.FromSeconds(time));
             SendEvent("playerUpdatePlayhead", time.ToString());
             
@@ -814,20 +805,6 @@ namespace Player
         #endregion
 
         
-
-        [ScriptableMember]
-        public double TimeOffsetInSeconds
-        {
-            get
-            {
-                if (media is MulticastPlayer)
-                {
-                    return (media as MulticastPlayer).TimeOffset.TotalSeconds;
-                }
-                return 0;
-            }
-        }
-
         [ScriptableMember]
         public double MulticastAverageBitRate
         {

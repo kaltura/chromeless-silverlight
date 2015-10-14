@@ -20,18 +20,6 @@ namespace Player
     {
         private MulticastReceiver receiver;
 
-        public event EventHandler<UnixTimeArgs> SyncPointPlayed
-        {
-            add
-            {
-                receiver.SyncPointPlayed += value;
-            }
-            // Remove the input delegate from the collection.
-            remove
-            {
-                receiver.SyncPointPlayed -= value;
-            }
-        }   
 
         public MulticastPlayer(MediaElement element, IDictionary<string, string> initParams, Logger logger)
             : base(element,logger.clone("McastPlayer"))
@@ -85,25 +73,6 @@ namespace Player
             }
         }
 
-        public TimeSpan TimeOffset
-        {
-            get
-            {
-                try
-                {
-                    var streamSource = receiver.getMediaSteramSource();
-                    if (streamSource != null)
-                    {
-                        return (streamSource as MediaStreamSourceMulticast).TimecodeOffset;
-                    }
-                }
-                catch (Exception e)
-                {
-                    logger.warn("Exception in timeoffset " + e);
-                }
-                return TimeSpan.Zero;
-            }
-        }
 
         public void Pause()
         {
@@ -178,7 +147,13 @@ namespace Player
             }   
             return diags;
         }
-    
 
+
+
+
+        internal double GetAbsoluteTime()
+        {
+            return this.receiver.GetAbsoluteTime();  
+        }
     }
 }

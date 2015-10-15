@@ -108,3 +108,5 @@ Backup*/
 UpgradeLog*.XML
 Player.Web/ClientBin/Player.xap
 Player/multicast-silverlight-lib.dll
+Player/Microsoft.Web.Media.SmoothStreaming.dll
+

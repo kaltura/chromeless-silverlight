@@ -1,5 +1,4 @@
-﻿using MediaStreamSrc.Classes;
-using System;
+﻿using System;
 using System.Collections;
 using System.Net;
 using System.Windows;
@@ -25,8 +24,6 @@ namespace Player
         AcquiringLicense = 7,
         ClipPlaying = 100,
     }
-      
-
     public interface IMediaElement
     {
          MediaElementState CurrentState { get;  }

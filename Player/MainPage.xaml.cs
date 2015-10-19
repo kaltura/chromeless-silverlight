@@ -160,7 +160,7 @@ namespace Player
         private void InitTimer()
         {
             if (_timerRate == 0)
-                _timerRate = 100;
+                _timerRate = 250;
 
             // timer
             _timer = new System.Windows.Threading.DispatcherTimer();

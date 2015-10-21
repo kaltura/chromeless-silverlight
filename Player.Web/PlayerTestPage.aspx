@@ -63,6 +63,8 @@
            // slCtl.Content.MediaElementJS.addJsListener("audioTrackSelected", "audioSelected");
            // slCtl.Content.MediaElementJS.addJsListener("textTracksReceived", "audios");
             slCtl.Content.MediaElementJS.addJsListener("textTrackSelected", "onCaption");
+            slCtl.Content.MediaElementJS.addJsListener("loadEmbeddedCaptions", "onCaption");
+            
 
         }
         function ready(playerId) {
@@ -144,7 +146,7 @@
           <%--<param name="initParams" value="autoplay=true,smoothStreamPlayer=true,playerId=kplayer,entryURL=http://mediadl.microsoft.com/mediadl/iisnet/smoothmedia/Experience/BigBuckBunny_720p.ism/Manifest,startvolume=1" />--%>
           <%--<param name="initParams" value="autoplay=true,smoothStreamPlayer=true,playerId=kplayer,entryURL=http://playready.directtaps.net/smoothstreaming/TTLSS720VC1/To_The_Limit_720.ism/Manifest" />--%>
 
-          <param name="initParams" value="startvolume=1,smoothStreamPlayer=true,preload=auto,entryURL=http://mcott2_tvinci2-s.akamaihd.net/ondemand/201407B/TA_HD_DOCTOR_X_S2_EP6_PC_SS.ism/Manifest,licenseURL=http://playready.tvinci.com/rightsmanager.asmx,autoPlay=true" />
+          <param name="initParams" value="startvolume=1,smoothStreamPlayer=true,preload=auto,entryURL=http://vod.toggletv.sg/vod/s/felucia/201504A/DI_HD_KING_ARTHUR_PC_SS.ism/Manifest,licenseURL=http%3A//udrm2-403043622.eu-west-1.elb.amazonaws.com//cenc/widevine/license%3Fcustom_data%3DeyJjYV9zeXN0ZW0iOiJPVFQiLCJ1c2VyX3Rva2VuIjoiMjIxNDg4MyIsImFjY291bnRfaWQiOjE0NywiY29udGVudF9pZCI6IlBSTU0xMDAwMDAzMDI5MDIzMTkwIiwiZmlsZXMiOiIiLCJ1ZGlkIjoiIn0%253D%26signature%3DeTYiuKqWLeQUFOdHeSZZwgDbktI%253D%26,autoPlay=true" />
 
 		  <a href="http://go.microsoft.com/fwlink/?LinkID=149156&v=5.0.61118.0" style="text-decoration:none">
  			  <img src="http://go.microsoft.com/fwlink/?LinkId=161376" alt="Get Microsoft Silverlight" style="border-style:none"/>

@@ -82,7 +82,7 @@ namespace Player
         }
 
         public void selectTextTrack(int trackIndex)
-        {
+        {            
             if (textTracks != null && textTracks.Count > trackIndex)
             {
                 currentTextTrack = textTracks[trackIndex];
@@ -116,8 +116,8 @@ namespace Player
                 else
                 {
                     _capt_timer.Stop();
-                }
-            }
+                }                    
+            }            
         }
 
         private void getNextTextChunks(object sender, EventArgs e)
@@ -288,60 +288,117 @@ namespace Player
 
         private void AddMarkers(IAsyncResult argAR)
         {
-            if (!Deployment.Current.Dispatcher.CheckAccess())
-            {
-                Deployment.Current.Dispatcher.BeginInvoke(() => AddMarkers(argAR));
-            }
-
-            foreach (SegmentInfo segmentInfo in this.element.ManifestInfo.Segments)
-            {
-                foreach (StreamInfo streamInfo in segmentInfo.SelectedStreams)
+            try {
+                if (!Deployment.Current.Dispatcher.CheckAccess())
                 {
-                    if (streamInfo.UniqueId == ((string)argAR.AsyncState))
+                    Deployment.Current.Dispatcher.BeginInvoke(() => AddMarkers(argAR));
+                }
+
+                foreach (SegmentInfo segmentInfo in this.element.ManifestInfo.Segments)
+                {
+                    foreach (StreamInfo streamInfo in segmentInfo.SelectedStreams)
                     {
-                        foreach (TrackInfo trackInfo in streamInfo.SelectedTracks)
+                        if (streamInfo.UniqueId == ((string)argAR.AsyncState))
                         {
-                            ChunkResult chunkResult = trackInfo.EndGetChunk(argAR);
-
-                            if (chunkResult.Result == ChunkResult.ChunkResultState.Succeeded && currentTextTrack != null)
+                            foreach (TrackInfo trackInfo in streamInfo.SelectedTracks)
                             {
-                                System.Text.Encoding enc = System.Text.Encoding.UTF8;
-                                int length = (int)chunkResult.ChunkData.Length;
-                                byte[] rawData = new byte[length];
-                                chunkResult.ChunkData.Read(rawData, 0, length);
-                                String text = enc.GetString(rawData, 0, rawData.Length);
-                                
-                                XElement xElem = XElement.Parse(text);
-                                XElement bodyElem = xElem.Elements().FirstOrDefault(e => e.Name.LocalName == "body");
+                                ChunkResult chunkResult = trackInfo.EndGetChunk(argAR);
 
-                                //first received chunk - notify js
-                                if (!textTrackLoaded)
+                                if (chunkResult.Result == ChunkResult.ChunkResultState.Succeeded && currentTextTrack != null)
                                 {
-                                    XElement copyElement = new XElement(xElem);
-                                    XElement copyBodyElem = copyElement.Elements().FirstOrDefault(e => e.Name.LocalName == "body");
-                                    //we can't send the body elements, they are causing "Eval" exception
-                                    copyBodyElem.RemoveAll();
-                                    SourceEventArgs args = new SourceEventArgs(getCurrentTextIndex());
-                                    args.Text = copyElement.ToString();
-                                    TextTrackLoaded(this, args);
-                                    textTrackLoaded = true;
-                                }
+                                    System.Text.Encoding enc = System.Text.Encoding.UTF8;
+                                    int length = (int)chunkResult.ChunkData.Length;
+                                    byte[] rawData = new byte[length];
+                                    chunkResult.ChunkData.Read(rawData, 0, length);
+                                    String text = enc.GetString(rawData, 0, rawData.Length);
+                                    XElement xElem = XElement.Parse(text);
+                                    XElement bodyElem = xElem.Elements().FirstOrDefault(e => e.Name.LocalName == "body");
+
+                                    //first received chunk - notify js
+                                    if (!textTrackLoaded)
+                                    {
+                                        XElement copyElement = new XElement(xElem);
+                                        XElement copyBodyElem = copyElement.Elements().FirstOrDefault(e => e.Name.LocalName == "body");
+                                        //we can't send the body elements, they are causing "Eval" exception
+                                        copyBodyElem.RemoveAll();
+                                        SourceEventArgs args = new SourceEventArgs(getCurrentTextIndex());
+                                        args.Text = copyElement.ToString();
+                                        TextTrackLoaded(this, args);
+                                        textTrackLoaded = true;
+                                    }                                    
                                     
-                                foreach (XElement el in bodyElem.Elements())
-                                {
-                                    TimelineMarker newMarker = new TimelineMarker();
-                                    newMarker.Text = el.ToString();
-                                    string begin = el.Attribute("begin").Value;
-                                    newMarker.Time = chunkResult.Timestamp + TimeSpan.Parse(begin );
+                                    //Get the caption language
                                     string langName = "";
                                     currentTextTrack.Attributes.TryGetValue("Name", out langName);
-                                    newMarker.Type = langName;
-                                    this.element.Markers.Add(newMarker);
-                                 }                         
+
+                                    //Fix for TTML where div contains begin and end values instead of paragraph node
+                                    int segId = 0;
+                                    //Get all div under the body node
+                                    IEnumerable<XElement> divElements =
+                                            from div in bodyElem.Descendants()
+                                            where div.Name.LocalName == "div"
+                                            select div;
+                                    //Fix alogorithem:
+                                    //1. Iterate over each div.
+                                    //2. Find each begin and end values.
+                                    //3. Aggregate over each child of a div, concat it text value.
+                                    //4. Create a new paragraph element with the div begin and end attributes.
+                                    //5. Clear all the attribute and elements of the original div and replace with new paragraph.
+                                    foreach (XElement divElem in divElements) {
+                                        XAttribute begin = divElem.Attributes().FirstOrDefault(e => e.Name.LocalName == "begin");
+                                        XAttribute end = divElem.Attributes().FirstOrDefault(e => e.Name.LocalName == "end");
+
+                                        if (begin != null)
+                                        {
+                                            IEnumerable<string> textSegs =
+                                                from seg in divElem.Descendants()
+                                                where seg.Name.LocalName == "p"
+                                                select (string)seg;
+
+                                            string str = textSegs.Aggregate((x, y) => x + "<br/>" + y);
+                                            
+                                            XElement pElem = divElem.Elements().FirstOrDefault(e => e.Name.LocalName == "p");
+                                            XAttribute region = pElem.Attributes().FirstOrDefault(e => e.Name.LocalName == "region");
+
+                                            divElem.RemoveAll();
+
+                                            XAttribute idAttr = new XAttribute("id", "p" + segId);
+                                            XElement newP = new XElement("p", begin, end, region, idAttr);
+                                            newP.Value = str;
+                                            divElem.Add(newP);
+                                            segId++;
+                                        }
+                                    }
+                                    //Turn each caption line to a media marker
+                                    foreach (XElement el in bodyElem.Elements())
+                                    {                                        
+                                        IEnumerable<XElement> pSegs =
+                                                from p in el.Descendants()
+                                                where p.Name.LocalName == "p"
+                                                select p;
+
+                                        foreach (XElement pSeg in pSegs)
+                                        {
+                                            TimelineMarker newMarker = new TimelineMarker();
+                                            //Create discrete marker points for each segment
+                                            newMarker.Text = pSeg.ToString();
+                                            newMarker.Type = langName;
+                                            XAttribute begin = pSeg.Attribute("begin");
+                                            if (begin.Value != null)
+                                            {                                                
+                                                newMarker.Time = chunkResult.Timestamp + TimeSpan.Parse(begin.Value);
+                                                this.element.Markers.Add(newMarker);                                                
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
-                }
+                }                
+            }catch(Exception ex)
+            {
+                logger.info("Error occur while trying to add marker:" + ex.Message);
             }
         }
 

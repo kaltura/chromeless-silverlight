@@ -280,7 +280,11 @@ namespace Player
                 ssMedia.MarkerReached += media_MarkerReached;
                 ssMedia.TextTrackLoaded += media_TextTrackLoaded;
             }
-            
+
+            if (media is MulticastPlayer)
+            {
+                (media as MulticastPlayer).ReceivedID3Tag += MainPage_ReceivedID3Tag;
+            }
   
           //  media.MouseLeftButtonDown += media_MouseLeftButtonDown;
 
@@ -288,6 +292,12 @@ namespace Player
             {
                 media.MouseLeftButtonUp += media_MouseLeftButtonUp;
             }
+        }
+
+        void MainPage_ReceivedID3Tag(string id3Tag)
+        {
+            System.Diagnostics.Debug.WriteLine("onId3Tag " + id3Tag);
+            this.SendEvent("onId3Tag", id3Tag);
         }
 
         private void StartTimer()
@@ -374,17 +384,8 @@ namespace Player
 
         void _timer_Tick(object sender, EventArgs e)
         {
-            double time;
-        //    logger.info("playerUpdatePlayhead " + TimeSpan.FromSeconds(time));
-
-            if (media is MulticastPlayer)
-            {
-                time = (media as MulticastPlayer).GetAbsoluteTime();
-            }
-            else
-            {
-                time = CurrentTimeInSeconds;
-            }
+            double time = CurrentTimeInSeconds;
+       
             SendEvent("playerUpdatePlayhead", time.ToString());
         }
        

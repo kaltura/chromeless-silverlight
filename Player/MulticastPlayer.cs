@@ -20,8 +20,24 @@ namespace Player
     {
         private MulticastReceiver receiver;
 
-        public event MulticastReceiver.ReceivedID3TagDelegate ReceivedID3Tag;
-
+        public event MulticastReceiver.ReceivedID3TagDelegate ReceivedID3Tag
+        {
+            add
+            {
+                if (this.receiver != null)
+                {
+                    this.receiver.ReceivedID3Tag += value;
+                }
+            }
+            // Remove the input delegate from the collection.
+            remove
+            {
+                if (this.receiver != null)
+                {
+                    this.receiver.ReceivedID3Tag -= value;
+                }
+            }
+        }
 
         public MulticastPlayer(MediaElement element, IDictionary<string, string> initParams, Logger logger)
             : base(element,logger.clone("McastPlayer"))
@@ -33,18 +49,13 @@ namespace Player
             this.receiver.BeginJoinGroup += receiver_BeginJoinGroup;
             this.receiver.EndJoinGroup += receiver_EndJoinGroup;
             this.receiver.ReceivedFirstPacket += receiver_ReceivedFirstPacket;
-            this.receiver.ReceivedID3Tag += receiver_ReceivedID3Tag;
-
+      
             this.receiver.setMediaPlayer(this.element);
             this.receiver.init(initParams);
             this.element.Volume = 1.0;
         }
 
-        void receiver_ReceivedID3Tag(string id3Tag)
-        {
-            ReceivedID3Tag(id3Tag);
-        }
-
+    
         public void stretchFill()
         {
             this.element.Stretch = Stretch.Fill;

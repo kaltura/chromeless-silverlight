@@ -56,29 +56,24 @@ namespace Player
 
         private IMediaElement media = null;
         private string _ip;
-       
+
         public MainPage(IDictionary<string, string> initParams)
         {
             InitializeComponent();
 
             HandleInitParams(initParams);
 
-            ChoosePlayer();
+            InitPlayer();
 
             HtmlPage.RegisterScriptableObject("MediaElementJS", this);
             if ( initParams.ContainsKey("onLoaded") ) {
                 HtmlPage.Window.Invoke( initParams["onLoaded"] );
             }
-           
-
-            RegisterMediaEvents();
 
             InitDebug();
 
             InitTimer();
-
-            InitMedia();
-
+   
             if (!String.IsNullOrEmpty(_readyCallBack))
             {
                 try
@@ -91,6 +86,7 @@ namespace Player
                 }
             }
 
+            Application.Current.MainWindow.Closing += new EventHandler<System.ComponentModel.ClosingEventArgs>((s,e)=>MainPage_Unloaded(s,null));
             this.Unloaded += MainPage_Unloaded;
           
         }
@@ -101,6 +97,12 @@ namespace Player
         }
 
         static Random idGen = new Random(Environment.TickCount);
+
+         private void InitPlayer()
+        {
+            ChoosePlayer();
+            InitMedia();
+        }
 
         private void ChoosePlayer()
         {
@@ -152,6 +154,7 @@ namespace Player
                 if (_autoplay || _preload != "none")
                     loadMedia();
             }
+            RegisterMediaEvents();
         }
 
         /// <summary>
@@ -352,6 +355,10 @@ namespace Player
 
         private void cleanup()
         {
+            if (media is MulticastPlayer)
+            {
+                (media as MulticastPlayer).ReceivedID3Tag -= MainPage_ReceivedID3Tag;
+            }
             if (media is IDisposable)
             {
                 (media as IDisposable).Dispose();
@@ -685,9 +692,9 @@ namespace Player
             logger.info("method:reloadMedia " + media.CurrentState);
             if (_enableMultiCastPlayer)
             {
-                cleanup();
+              cleanup();
                
-                media = new MulticastPlayer(progressive_media,_initParams, logger);
+               InitPlayer();
             }
         }
 

@@ -1,13 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Express 2013 for Web
-VisualStudioVersion = 12.0.21005.1
+# Visual Studio 2013
+VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "chromeless-silverlight", "chromeless-silverlight\chromeless-silverlight.csproj", "{45911E80-137D-4168-9541-1C33D9BCB77C}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Player", "Player\Player.csproj", "{085F596E-E836-4BF2-865C-07BB493F83DB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Player.Web", "Player.Web\Player.Web.csproj", "{FFD1C55A-B93D-42CF-8B76-AB33DC5CFA54}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "multicast-silverlight-lib", "..\eCDN\multicast-silverlight-lib\multicast-silverlight-lib.csproj", "{7F54E99B-9BA9-4DE1-9D80-21D99E838D0F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,10 +15,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{45911E80-137D-4168-9541-1C33D9BCB77C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{45911E80-137D-4168-9541-1C33D9BCB77C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{45911E80-137D-4168-9541-1C33D9BCB77C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{45911E80-137D-4168-9541-1C33D9BCB77C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{085F596E-E836-4BF2-865C-07BB493F83DB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{085F596E-E836-4BF2-865C-07BB493F83DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{085F596E-E836-4BF2-865C-07BB493F83DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -27,6 +23,10 @@ Global
 		{FFD1C55A-B93D-42CF-8B76-AB33DC5CFA54}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FFD1C55A-B93D-42CF-8B76-AB33DC5CFA54}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FFD1C55A-B93D-42CF-8B76-AB33DC5CFA54}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7F54E99B-9BA9-4DE1-9D80-21D99E838D0F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7F54E99B-9BA9-4DE1-9D80-21D99E838D0F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7F54E99B-9BA9-4DE1-9D80-21D99E838D0F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7F54E99B-9BA9-4DE1-9D80-21D99E838D0F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

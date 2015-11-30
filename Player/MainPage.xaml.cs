@@ -86,9 +86,7 @@ namespace Player
                 }
             }
 
-            Application.Current.MainWindow.Closing += new EventHandler<System.ComponentModel.ClosingEventArgs>((s,e)=>MainPage_Unloaded(s,null));
             this.Unloaded += MainPage_Unloaded;
-          
         }
 
         void MainPage_Unloaded(object sender, RoutedEventArgs e)
@@ -300,7 +298,7 @@ namespace Player
         void MainPage_ReceivedID3Tag(string id3Tag)
         {
             System.Diagnostics.Debug.WriteLine("onId3Tag " + id3Tag);
-            this.SendEvent("onId3Tag", id3Tag);
+            this.SendEvent("id3tag", id3Tag);
         }
 
         private void StartTimer()

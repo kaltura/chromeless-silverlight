@@ -15,7 +15,7 @@ namespace Player
     public class customLicenseAcquirer : LicenseAcquirer
     {
         private string challengeString;
-        string _mediaElementName;
+        string _mediaElementName;        
 
         public customLicenseAcquirer(string mediaElementName)
         {
@@ -74,9 +74,26 @@ namespace Player
 
         private void ResponseCallback(IAsyncResult ar)
         {
-            HttpWebRequest request = ar.AsyncState as HttpWebRequest;
-            WebResponse response = request.EndGetResponse(ar);
-            SetLicenseResponse(response.GetResponseStream());
+            Stream responseStream = new MemoryStream();
+            try {
+                
+                HttpWebRequest request = ar.AsyncState as HttpWebRequest;
+                WebResponse response = request.EndGetResponse(ar);
+                responseStream = response.GetResponseStream();
+                
+            }
+            catch (WebException e)
+            {
+                
+            }
+            catch (Exception e)
+            {
+                
+            }
+            finally
+            {
+                SetLicenseResponse(responseStream);
+            }
         }
     }
 }

@@ -468,6 +468,12 @@ namespace Player
                 case MediaElementState.Buffering:
                     SendEvent("progress");
                     break;
+                case MediaElementState.Individualizing:
+                    SendEvent("individualizing");
+                    break;
+                case MediaElementState.AcquiringLicense:
+                    SendEvent("acquiringLicense");
+                    break;
             }
         }
 
@@ -668,7 +674,7 @@ namespace Player
             if (!String.IsNullOrEmpty(_licenseURL))
             {
                 media.LicenseAcquirer = new customLicenseAcquirer("media");
-
+                media.LicenseAcquirer.AcquireLicenseCompleted += new EventHandler<AcquireLicenseCompletedEventArgs>(acquirer_Completed);                 
                 // Set the License URI to proper License Server address.
                 /*partnerId - mandatory
                 ks - mandatory
@@ -682,6 +688,20 @@ namespace Player
                 media.LicenseAcquirer.LicenseServerUriOverride = new Uri(_licenseURL, UriKind.Absolute);
             }
             media.Source = new Uri(_mediaUrl, UriKind.Absolute);
+        }
+        public void acquirer_Completed(object sender, AcquireLicenseCompletedEventArgs e)
+        {
+            if (e.Error != null)
+            {
+                // take appropriate action.  Might be retrying for instance.
+            }
+            else if (e.Cancelled)
+            {
+                // take appropriate action.  Might be nothing.
+            }
+            else
+            {
+            }
         }
 
         [ScriptableMember]

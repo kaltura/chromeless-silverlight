@@ -20,6 +20,25 @@ namespace Player
     {
         private MulticastReceiver receiver;
 
+        public event MulticastReceiver.ReceivedID3TagDelegate ReceivedID3Tag
+        {
+            add
+            {
+                if (this.receiver != null)
+                {
+                    this.receiver.ReceivedID3Tag += value;
+                }
+            }
+            // Remove the input delegate from the collection.
+            remove
+            {
+                if (this.receiver != null)
+                {
+                    this.receiver.ReceivedID3Tag -= value;
+                }
+            }
+        }
+
         public MulticastPlayer(MediaElement element, IDictionary<string, string> initParams, Logger logger)
             : base(element,logger.clone("McastPlayer"))
         {
@@ -30,11 +49,13 @@ namespace Player
             this.receiver.BeginJoinGroup += receiver_BeginJoinGroup;
             this.receiver.EndJoinGroup += receiver_EndJoinGroup;
             this.receiver.ReceivedFirstPacket += receiver_ReceivedFirstPacket;
+      
             this.receiver.setMediaPlayer(this.element);
             this.receiver.init(initParams);
             this.element.Volume = 1.0;
         }
 
+    
         public void stretchFill()
         {
             this.element.Stretch = Stretch.Fill;
@@ -43,6 +64,7 @@ namespace Player
         void receiver_ReceivedFirstPacket()
         {
         }
+
 
         void receiver_EndJoinGroup(string streamAddress, int streamPort, bool isSuccessful, string errorStr)
         {
@@ -72,25 +94,6 @@ namespace Player
             }
         }
 
-        public TimeSpan TimeOffset
-        {
-            get
-            {
-                try
-                {
-                    var streamSource = receiver.getMediaSteramSource();
-                    if (streamSource != null)
-                    {
-                        return (streamSource as MediaStreamSourceMulticast).TimecodeOffset;
-                    }
-                }
-                catch (Exception e)
-                {
-                    logger.warn("Exception in timeoffset " + e);
-                }
-                return TimeSpan.Zero;
-            }
-        }
 
         public void Pause()
         {
@@ -165,7 +168,5 @@ namespace Player
             }   
             return diags;
         }
-    
-
     }
 }

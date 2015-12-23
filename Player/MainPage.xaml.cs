@@ -56,29 +56,24 @@ namespace Player
 
         private IMediaElement media = null;
         private string _ip;
-       
+
         public MainPage(IDictionary<string, string> initParams)
         {
             InitializeComponent();
 
             HandleInitParams(initParams);
 
-            ChoosePlayer();
+            InitPlayer();
 
             HtmlPage.RegisterScriptableObject("MediaElementJS", this);
             if ( initParams.ContainsKey("onLoaded") ) {
                 HtmlPage.Window.Invoke( initParams["onLoaded"] );
             }
-           
-
-            RegisterMediaEvents();
 
             InitDebug();
 
             InitTimer();
-
-            InitMedia();
-
+   
             if (!String.IsNullOrEmpty(_readyCallBack))
             {
                 try
@@ -92,7 +87,6 @@ namespace Player
             }
 
             this.Unloaded += MainPage_Unloaded;
-          
         }
 
         void MainPage_Unloaded(object sender, RoutedEventArgs e)
@@ -101,6 +95,12 @@ namespace Player
         }
 
         static Random idGen = new Random(Environment.TickCount);
+
+         private void InitPlayer()
+        {
+            ChoosePlayer();
+            InitMedia();
+        }
 
         private void ChoosePlayer()
         {
@@ -152,6 +152,7 @@ namespace Player
                 if (_autoplay || _preload != "none")
                     loadMedia();
             }
+            RegisterMediaEvents();
         }
 
         /// <summary>
@@ -280,7 +281,11 @@ namespace Player
                 ssMedia.MarkerReached += media_MarkerReached;
                 ssMedia.TextTrackLoaded += media_TextTrackLoaded;
             }
-            
+
+            if (media is MulticastPlayer)
+            {
+                (media as MulticastPlayer).ReceivedID3Tag += MainPage_ReceivedID3Tag;
+            }
   
           //  media.MouseLeftButtonDown += media_MouseLeftButtonDown;
 
@@ -288,6 +293,12 @@ namespace Player
             {
                 media.MouseLeftButtonUp += media_MouseLeftButtonUp;
             }
+        }
+
+        void MainPage_ReceivedID3Tag(string id3Tag)
+        {
+            System.Diagnostics.Debug.WriteLine("onId3Tag " + id3Tag);
+            this.SendEvent("id3tag", id3Tag);
         }
 
         private void StartTimer()
@@ -342,6 +353,10 @@ namespace Player
 
         private void cleanup()
         {
+            if (media is MulticastPlayer)
+            {
+                (media as MulticastPlayer).ReceivedID3Tag -= MainPage_ReceivedID3Tag;
+            }
             if (media is IDisposable)
             {
                 (media as IDisposable).Dispose();
@@ -371,11 +386,11 @@ namespace Player
                 }
             }
         }
+
         void _timer_Tick(object sender, EventArgs e)
         {
-            var time = CurrentTimeInSeconds + TimeOffsetInSeconds;
-            logger.info("playerUpdatePlayhead " + TimeSpan.FromSeconds(time));
-
+            double time = CurrentTimeInSeconds;
+       
             SendEvent("playerUpdatePlayhead", time.ToString());
         }
        
@@ -394,7 +409,7 @@ namespace Player
         {
             SendEvent("playerPlayEnd");
         }
-
+        
         void play_timer_tick(object sender, EventArgs e)
         {
             ((DispatcherTimer)sender).Stop();
@@ -695,9 +710,9 @@ namespace Player
             logger.info("method:reloadMedia " + media.CurrentState);
             if (_enableMultiCastPlayer)
             {
-                cleanup();
+              cleanup();
                
-                media = new MulticastPlayer(progressive_media,_initParams, logger);
+               InitPlayer();
             }
         }
 
@@ -751,8 +766,8 @@ namespace Player
             SendEvent("playerSeekStart","0");
             media.Position = new TimeSpan(0, 0, 0, 0, milliseconds);
             //Send the event here so if we are paused the event will still be dispatched
-            var time = CurrentTimeInSeconds + TimeOffsetInSeconds;
-            WriteDebug("playerUpdatePlayhead " + TimeSpan.FromSeconds(time));
+            var time = CurrentTimeInSeconds;
+     //       WriteDebug("playerUpdatePlayhead " + TimeSpan.FromSeconds(time));
             SendEvent("playerUpdatePlayhead", time.ToString());
             
             SendEvent("playerSeekEnd",media.Position.TotalSeconds.ToString());
@@ -816,20 +831,6 @@ namespace Player
         #endregion
 
         
-
-        [ScriptableMember]
-        public double TimeOffsetInSeconds
-        {
-            get
-            {
-                if (media is MulticastPlayer)
-                {
-                    return (media as MulticastPlayer).TimeOffset.TotalSeconds;
-                }
-                return 0;
-            }
-        }
-
         [ScriptableMember]
         public double MulticastAverageBitRate
         {

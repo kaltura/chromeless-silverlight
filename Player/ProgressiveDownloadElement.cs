@@ -256,7 +256,13 @@ namespace Player
                 element.Position = value;
             }
         }
-
+        public TimeSpan StartPosition
+        {
+            get
+            {
+                return new TimeSpan(0);
+            }
+        }
         public Duration NaturalDuration
         {
             get

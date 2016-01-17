@@ -30,6 +30,8 @@ namespace Player
 
          TimeSpan Position { get; set; }
 
+        TimeSpan StartPosition { get; }
+
          Duration NaturalDuration { get;  }
 
          Double DownloadProgress { get;  }
@@ -50,9 +52,9 @@ namespace Player
 
          event EventHandler<ExceptionRoutedEventArgs> MediaFailed;
 
-         event EventHandler<RoutedEventArgs> MediaOpened;
+         event EventHandler<RoutedEventArgs> MediaOpened;        
 
-         event  EventHandler<MouseButtonEventArgs> MouseLeftButtonUp;
+        event  EventHandler<MouseButtonEventArgs> MouseLeftButtonUp;
 
         void Play();
 

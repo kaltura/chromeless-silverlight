@@ -580,7 +580,7 @@ namespace Player
         #endregion
 
         #region JS Interface
-        
+
         [ScriptableMember]
         public void addJsListener(string bindName,string callback)
         {
@@ -761,16 +761,16 @@ namespace Player
         {
             logger.info("method:setCurrentTime: " + position.ToString());
 
-            int milliseconds = Convert.ToInt32(position * 1000);
-
+            int seconds = Convert.ToInt32(position);
+            TimeSpan newPosition = TimeSpan.FromSeconds(seconds) + media.StartPosition;
             SendEvent("playerSeekStart","0");
-            media.Position = new TimeSpan(0, 0, 0, 0, milliseconds);
+            media.Position = newPosition;
             //Send the event here so if we are paused the event will still be dispatched
             var time = CurrentTimeInSeconds;
      //       WriteDebug("playerUpdatePlayhead " + TimeSpan.FromSeconds(time));
             SendEvent("playerUpdatePlayhead", time.ToString());
             
-            SendEvent("playerSeekEnd",media.Position.TotalSeconds.ToString());
+            SendEvent("playerSeekEnd", time.ToString());
         }
 
 
@@ -849,7 +849,7 @@ namespace Player
         {
             get
             {
-                return media.Position.TotalSeconds;
+                return media.Position.TotalSeconds - media.StartPosition.TotalSeconds;
             }
         }
 

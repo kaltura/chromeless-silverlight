@@ -575,6 +575,14 @@ namespace Player
             }
         }
 
+        public TimeSpan StartPosition
+        {
+            get
+            {
+                return element.StartPosition;
+            }
+        }
+
         public Duration NaturalDuration
         {
             get

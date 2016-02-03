@@ -57,10 +57,18 @@ namespace Player
         {
             if (this.playingStream!=null)
             {
-                TrackInfo selected = this.tracks[trackIndex];
                 IList<TrackInfo> selectedList = new List<TrackInfo>();
-                selectedList.Add(selected);
-                this.playingStream.SelectTracks(selectedList, false);
+                bool flushBuffer = false;
+                if (trackIndex == -1)
+                {
+                    selectedList = this.tracks;
+                } else
+                {
+                    TrackInfo selected = this.tracks[trackIndex];                    
+                    selectedList.Add(selected);
+                    flushBuffer = true;
+                }
+                this.playingStream.SelectTracks(selectedList, flushBuffer);
             }
         }
 
@@ -231,19 +239,22 @@ namespace Player
         }
 
         void element_ManifestReady(object sender, EventArgs e)
-        {
-
+        {            
         }
 
         void element_MediaOpened(object sender, RoutedEventArgs e)
         {
+            if (this.element.IsLive)
+            {
+                this.element.StartSeekToLive();                
+            }
             if (MediaOpened != null)
             {
                 MediaOpened(sender, e);
             }
 
             foreach (SegmentInfo segment in this.element.ManifestInfo.Segments)
-            {
+            {                
                 audioTracks = new List<StreamInfo>();
                 textTracks = new List<StreamInfo>();
                 IList<StreamInfo> streamInfoList = segment.AvailableStreams;
@@ -381,6 +392,7 @@ namespace Player
                                         {
                                             TimelineMarker newMarker = new TimelineMarker();
                                             //Create discrete marker points for each segment
+                                            pSeg.Add(new XAttribute("timestamp", chunkResult.Timestamp.TotalSeconds.ToString()));
                                             newMarker.Text = pSeg.ToString();
                                             newMarker.Type = langName;
                                             XAttribute begin = pSeg.Attribute("begin");
@@ -626,7 +638,24 @@ namespace Player
 
         public System.Collections.IDictionary GetDiagnostics()
         {
-            throw new NotImplementedException();
+            Dictionary<string, string> diags = new Dictionary<string, string>();
+            if (this.element != null)
+            {
+                try
+                {
+                    diags[DiagnosticsLiveConstants.IsLive] = this.element.IsLive.ToString();
+                    diags[DiagnosticsLiveConstants.IsLivePosition] = this.element.IsLivePosition.ToString();
+                    diags[DiagnosticsLiveConstants.LiveBackOff] = this.element.LiveBackOff.ToString();
+                    diags[DiagnosticsLiveConstants.LivePlaybackOffset] = this.element.LivePlaybackOffset.ToString();
+                    diags[DiagnosticsLiveConstants.LivePlaybackStartPosition] = this.element.LivePlaybackStartPosition.ToString();
+                    diags[DiagnosticsLiveConstants.LivePosition] = this.element.LivePosition.ToString();
+                }
+                catch (Exception e)
+                {
+                    this.logger.warn("diagnostics error: {0}", e);
+                }
+            }
+            return diags;
         }
     }
 }

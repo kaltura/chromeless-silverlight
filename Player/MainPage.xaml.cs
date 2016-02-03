@@ -15,7 +15,6 @@ using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 
-
 namespace Player
 {
     [ScriptableType]
@@ -39,6 +38,7 @@ namespace Player
         private bool _isEnded;
         private bool _isPaused;
         private string _playerId;
+        private double _lastDuration = 0;
 
         private Dictionary<String, List<String>> mapJSBindings = new Dictionary<string, List<String>>();
         private double _bufferedTime;
@@ -390,12 +390,18 @@ namespace Player
         void _timer_Tick(object sender, EventArgs e)
         {
             double time = CurrentTimeInSeconds;
-       
+            double currentDuration = media.NaturalDuration.TimeSpan.TotalSeconds;
+            if (_isLive && _isDVR && _lastDuration != currentDuration)
+            {
+                _lastDuration = currentDuration;
+                SendEvent("durationChange", _lastDuration.ToString());
+            }
             SendEvent("playerUpdatePlayhead", time.ToString());
         }
        
         void media_MediaOpened(object sender, RoutedEventArgs e)
         {
+            _lastDuration = media.NaturalDuration.TimeSpan.TotalSeconds;
             SendEvent("durationChange", media.NaturalDuration.TimeSpan.TotalSeconds.ToString());
         }
 
@@ -539,25 +545,29 @@ namespace Player
 
         void media_BitratesReady(object sender, ManifestEventArgs e)
         {
-            List<Object> tracks = e.Flavors;
-            String bitrates = "";
+            List<TrackInfo> tracks = e.Flavors.Cast<TrackInfo>().ToList();
+            String bitrates = "";            
             if (tracks != null)
             {
-                for (int i = 0; i < tracks.Count; i++)
+                foreach (TrackInfo ti in tracks)
                 {
                     int height = 0;
-                    if (((TrackInfo)tracks.ElementAt(i)).Attributes.ContainsKey("MaxHeight"))
+                    if (ti.Attributes.ContainsKey("MaxHeight"))
                     {
-                        Int32.TryParse(((TrackInfo)tracks.ElementAt(i)).Attributes["MaxHeight"], out height);
-                    }
-                    bitrates += "{\"type\":\"video/ism\",\"assetid\":" + "\"ism_" + i + "\"" + ",\"bandwidth\":" + ((TrackInfo)tracks.ElementAt(i)).Bitrate + ",\"height\":" + height + "}";
-                    if (i < tracks.Count - 1)
+                        Int32.TryParse(ti.Attributes["MaxHeight"], out height);
+                    }                    
+                    int width = 0;
+                    if (ti.Attributes.ContainsKey("MaxWidth"))
+                    {
+                        Int32.TryParse(ti.Attributes["MaxWidth"], out width);
+                    }                    
+                    bitrates += "{\"type\":\"video/ism\",\"assetid\":" + "\"ism_" + ti.Index + "\"" + ",\"bandwidth\":" + ti.Bitrate + ",\"height\":" + height + ",\"width\":" + width + "}";
+                    if (tracks.IndexOf(ti) < tracks.Count - 1)
                     {
                         bitrates += ",";
                     }
                 }
-            }
-
+            }            
             bitrates = "{\"flavors\":[" + bitrates + "]}";
             SendEvent("flavorsListChanged", bitrates);
         }
@@ -760,21 +770,16 @@ namespace Player
         public void setCurrentTime(Double position)
         {
             logger.info("method:setCurrentTime: " + position.ToString());
-
             int seconds = Convert.ToInt32(position);
             TimeSpan newPosition = TimeSpan.FromSeconds(seconds) + media.StartPosition;
             SendEvent("playerSeekStart","0");
             media.Position = newPosition;
             //Send the event here so if we are paused the event will still be dispatched
             var time = CurrentTimeInSeconds;
-     //       WriteDebug("playerUpdatePlayhead " + TimeSpan.FromSeconds(time));
-            SendEvent("playerUpdatePlayhead", time.ToString());
-            
+            //WriteDebug("playerUpdatePlayhead " + TimeSpan.FromSeconds(time));
+            SendEvent("playerUpdatePlayhead", time.ToString());            
             SendEvent("playerSeekEnd", time.ToString());
         }
-
-
-
 
         [ScriptableMember]
         public void setSrc(string url)
@@ -820,6 +825,18 @@ namespace Player
         }
 
         [ScriptableMember]
+        public bool StartSeekToLive
+        {
+            get {
+                if (media is SmoothStreamingElement)
+                {
+                    (media as SmoothStreamingElement).element.StartSeekToLive();
+                }
+                return true;
+            }
+        }
+
+        [ScriptableMember]
         public void stretchFill() 
         {
             if (media is MulticastPlayer)
@@ -849,10 +866,18 @@ namespace Player
         {
             get
             {
-                return media.Position.TotalSeconds - media.StartPosition.TotalSeconds;
+                //In manifest that have start position other then 0 if we haven't started playing yet then return 0,
+                //because before first play the curren tposition is 0, but start position is bigger than 0 and you'll get a negative number
+                if (media.StartPosition.TotalSeconds > 0 && media.Position.TotalSeconds == 0)
+                {
+                    return 0;
+                }
+                else
+                {
+                    return media.Position.TotalSeconds - media.StartPosition.TotalSeconds;
+                }
             }
         }
-
 
         [ScriptableMember]
         public IDictionary getDiagnostics()
@@ -862,6 +887,24 @@ namespace Player
                 return null;
             }
             return media.GetDiagnostics();
+        }
+        [ScriptableMember]
+        public string getDiagnosticsString()
+        {
+            if (media == null)
+            {
+                return null;
+            }
+            Dictionary<string, string> myDictionary = media.GetDiagnostics() as Dictionary<string, string>;
+            string diagDataString = "{";
+            foreach (KeyValuePair<string, string> diagData in myDictionary) {                
+                diagDataString += "\""+ diagData.Key+"\":\""+diagData.Value+"\",";//,\"assetid\":" + "\"ism_" + ti.Index + "\"" + ",\"bandwidth\":" + ti.Bitrate + ",\"height\":" + height + ",\"width\":" + width + "}";
+                
+            }
+            diagDataString= diagDataString.Remove(diagDataString.Length - 1);
+            diagDataString += "}";
+            return diagDataString;
+            
         }
     }
 }

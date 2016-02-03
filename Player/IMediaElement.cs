@@ -85,4 +85,14 @@ namespace Player
         public static readonly string PacketLoss = "PacketLoss";
         public static readonly string PacketRate = "PacketRate";
     }
+    
+    static internal class DiagnosticsLiveConstants
+    {
+        public static readonly string IsLive = "IsLive";
+        public static readonly string IsLivePosition = "IsLivePosition";
+        public static readonly string LiveBackOff = "LiveBackOff";
+        public static readonly string LivePlaybackOffset = "LivePlaybackOffset";
+        public static readonly string LivePlaybackStartPosition = "LivePlaybackStartPosition";
+        public static readonly string LivePosition = "LivePosition";        
+    }
 }

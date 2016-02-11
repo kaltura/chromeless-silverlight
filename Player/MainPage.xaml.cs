@@ -58,6 +58,8 @@ namespace Player
 
         private IMediaElement media = null;
         private string _ip;
+        private int m_mediaFailureRetryCount = 0;
+        private const int maxMediaFailureRetries = 5;
 
         public MainPage(IDictionary<string, string> initParams)
         {
@@ -413,8 +415,23 @@ namespace Player
 
         void media_MediaFailed(object sender, ExceptionRoutedEventArgs e)
         {
-            logger.info(e.ErrorException.Message);
-            SendEvent("error", "{\"errorMessage\":\"" + e.ErrorException.Message + "\", \"stackTrace\":\"" + e.ErrorException.StackTrace + "\"}" );
+            if (e.ErrorException != null &&
+                !String.IsNullOrEmpty(e.ErrorException.Message) &&
+                e.ErrorException.Message.IndexOf("3050 Corrupt H264 data encountered") > -1)
+            {
+                if (m_mediaFailureRetryCount < maxMediaFailureRetries)
+                {
+                    m_mediaFailureRetryCount++;
+                    (this.media as SmoothStreamingElement).Dispose();
+                    System.Threading.Thread.Sleep(3000);
+                    this._autoplay = true;
+                    this.InitPlayer();
+                }
+            }
+            else {
+                logger.info(e.ErrorException.Message);
+                SendEvent("error", "{\"errorMessage\":\"" + e.ErrorException.Message + "\", \"stackTrace\":\"" + e.ErrorException.StackTrace + "\"}");
+            }
         }
 
         void media_MediaEnded(object sender, RoutedEventArgs e)

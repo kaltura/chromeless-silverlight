@@ -14,6 +14,8 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using System.Globalization;
+using System.Threading;
 
 namespace Player
 {
@@ -60,6 +62,10 @@ namespace Player
         public MainPage(IDictionary<string, string> initParams)
         {
             InitializeComponent();
+
+            //Make sure that all data is passed as en-US culture, so it will prevent decimal seperator inconsistency
+            Thread.CurrentThread.CurrentUICulture = new CultureInfo("en-US");
+            Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
 
             HandleInitParams(initParams);
 

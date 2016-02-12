@@ -30,7 +30,7 @@ namespace Player
         private int _width;
         private int _height;
         private int _timerRate;
-        private Double _volume=1;
+        private Double _volume = 1;
         private string _readyCallBack;
         private bool _externalInterfaceDisabled = false;
         private bool _disableOnScreenClick = false;
@@ -51,15 +51,19 @@ namespace Player
         private bool _enableMultiCastPlayer;
         private IDictionary<string, string> _initParams;
         private Logger logger;
-     
+
         private bool _isLive = false;
         private bool _isDVR = false;
         private bool _shouldReload = false;
+        private bool _isRetry = false;
+        private Uri LastSmoothStreamingSource { get; set; }
+        private TimeSpan LastPosition { get; set; }
 
         private IMediaElement media = null;
         private string _ip;
         private int m_mediaFailureRetryCount = 0;
         private const int maxMediaFailureRetries = 5;
+
 
         public MainPage(IDictionary<string, string> initParams)
         {
@@ -74,14 +78,15 @@ namespace Player
             InitPlayer();
 
             HtmlPage.RegisterScriptableObject("MediaElementJS", this);
-            if ( initParams.ContainsKey("onLoaded") ) {
-                HtmlPage.Window.Invoke( initParams["onLoaded"] );
+            if (initParams.ContainsKey("onLoaded"))
+            {
+                HtmlPage.Window.Invoke(initParams["onLoaded"]);
             }
 
             InitDebug();
 
             InitTimer();
-   
+
             if (!String.IsNullOrEmpty(_readyCallBack))
             {
                 try
@@ -104,17 +109,21 @@ namespace Player
 
         static Random idGen = new Random(Environment.TickCount);
 
-         private void InitPlayer()
+        private void InitPlayer()
         {
             ChoosePlayer();
             InitMedia();
+
+
         }
+
+
 
         private void ChoosePlayer()
         {
-            
 
-            progressive_media.Visibility =  System.Windows.Visibility.Collapsed;
+
+            progressive_media.Visibility = System.Windows.Visibility.Collapsed;
             SmoothStream_media.Visibility = System.Windows.Visibility.Collapsed;
             if (_enableSmoothStreamPlayer)
             {
@@ -176,10 +185,10 @@ namespace Player
             _timer.Interval = new TimeSpan(0, 0, 0, 0, _timerRate); // 200 Milliseconds 
             _timer.Tick += _timer_Tick;
             _timer.Stop();
-            
+
         }
 
-        
+
         /// <summary>
         /// Handle all the external params in order to load the player
         /// </summary>
@@ -228,7 +237,7 @@ namespace Player
 
             if (initParams.ContainsKey("disableOnScreenClick") && initParams["disableOnScreenClick"] == "true")
                 _disableOnScreenClick = true;
-     
+
 
             if (initParams.ContainsKey("width"))
                 Int32.TryParse(initParams["width"], out _width);
@@ -236,7 +245,7 @@ namespace Player
             if (initParams.ContainsKey("height"))
                 Int32.TryParse(initParams["height"], out _height);
 
-   
+
             if (initParams.ContainsKey("timerate"))
                 Int32.TryParse(initParams["timerrate"], out _timerRate);
 
@@ -294,8 +303,8 @@ namespace Player
             {
                 (media as MulticastPlayer).ReceivedID3Tag += MainPage_ReceivedID3Tag;
             }
-  
-          //  media.MouseLeftButtonDown += media_MouseLeftButtonDown;
+
+            //  media.MouseLeftButtonDown += media_MouseLeftButtonDown;
 
             if (!_disableOnScreenClick)
             {
@@ -326,7 +335,7 @@ namespace Player
             MediaStreamSrc.Model.WMSLoggerFactory.getLogger(null).debug(text);
         }
 
-        private void SendEvent(string eventName,string param = null)
+        private void SendEvent(string eventName, string param = null)
         {
             /*
              * var bindEventMap = {
@@ -344,7 +353,7 @@ namespace Player
              */
             if (mapJSBindings.Keys.Contains(eventName))
             {
-                logger.info("Trigger "+ eventName + " with param "+ param);
+                logger.info("Trigger " + eventName + " with param " + param);
                 for (int i = 0; i < mapJSBindings[eventName].Count; i++)
                 {
                     try
@@ -354,7 +363,7 @@ namespace Player
                     catch (Exception e)
                     {
                         logger.info("Error occur while trying to trig function:" + e.Message);
-                    } 
+                    }
                 }
             }
         }
@@ -371,7 +380,7 @@ namespace Player
                 media = null;
             }
         }
-   
+
         #region media events
         void media_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
@@ -399,6 +408,11 @@ namespace Player
         {
             double time = CurrentTimeInSeconds;
             double currentDuration = media.NaturalDuration.TimeSpan.TotalSeconds;
+
+            if (SmoothStream_media.Position != null && SmoothStream_media.Position.TotalSeconds > 0)
+            {
+                LastPosition = SmoothStream_media.Position;
+            }
             if (_isLive && _isDVR && _lastDuration != currentDuration)
             {
                 _lastDuration = currentDuration;
@@ -406,9 +420,34 @@ namespace Player
             }
             SendEvent("playerUpdatePlayhead", time.ToString());
         }
-       
+
         void media_MediaOpened(object sender, RoutedEventArgs e)
         {
+            if (this._isRetry)
+            {
+                this._isRetry = false;
+                m_mediaFailureRetryCount = 0; //success
+
+                // restore state of player
+                if (SmoothStream_media.IsLive)
+                {
+                    // go to live if a live feed and don't have a last position,
+                    // most likely this is the result of the first load attempt
+                    SmoothStream_media.StartSeekToLive();
+                }
+                else
+                {
+                    // restore position		
+                    SmoothStream_media.Position = LastPosition;
+
+                }
+
+            }
+            else
+            {
+                this.LastSmoothStreamingSource = SmoothStream_media.SmoothStreamingSource;
+
+            }
             _lastDuration = media.NaturalDuration.TimeSpan.TotalSeconds;
             SendEvent("durationChange", media.NaturalDuration.TimeSpan.TotalSeconds.ToString());
         }
@@ -422,13 +461,17 @@ namespace Player
                 if (m_mediaFailureRetryCount < maxMediaFailureRetries)
                 {
                     m_mediaFailureRetryCount++;
-                    (this.media as SmoothStreamingElement).Dispose();
-                    System.Threading.Thread.Sleep(3000);
+
+                    SmoothStream_media.Source = null;
+                    SmoothStream_media.AutoPlay = true;
+                    SmoothStream_media.SmoothStreamingSource = new Uri(LastSmoothStreamingSource.AbsoluteUri);
                     this._autoplay = true;
-                    this.InitPlayer();
+                    this._isRetry = true;
+                    SmoothStream_media.Play();
                 }
             }
-            else {
+            else
+            {
                 logger.info(e.ErrorException.Message);
                 SendEvent("error", "{\"errorMessage\":\"" + e.ErrorException.Message + "\", \"stackTrace\":\"" + e.ErrorException.StackTrace + "\"}");
             }
@@ -438,7 +481,7 @@ namespace Player
         {
             SendEvent("playerPlayEnd");
         }
-        
+
         void play_timer_tick(object sender, EventArgs e)
         {
             ((DispatcherTimer)sender).Stop();
@@ -479,14 +522,14 @@ namespace Player
                     {
                         System.Windows.Threading.DispatcherTimer playTimer = new System.Windows.Threading.DispatcherTimer();
                         playTimer.Interval = new TimeSpan(0, 0, 0, 0, 300);
-                        playTimer.Tick += play_timer_tick; 
+                        playTimer.Tick += play_timer_tick;
                         playTimer.Start();
                     }
                     else
                     {
                         SendEvent("playerPaused");
                     }
-            
+
                     break;
                 case MediaElementState.Stopped:
                     _isEnded = false;
@@ -523,7 +566,7 @@ namespace Player
 
         void media_BufferingProgressChanged(object sender, RoutedEventArgs e)
         {
-             _bufferedTime = media.DownloadProgress * media.NaturalDuration.TimeSpan.TotalSeconds;
+            _bufferedTime = media.DownloadProgress * media.NaturalDuration.TimeSpan.TotalSeconds;
             _bufferedBytes = media.BufferingProgress;
 
             SendEvent("progress");
@@ -544,7 +587,7 @@ namespace Player
         /**
          * parse given args to languages string
          * */
-        private string parseLanguages( ManifestEventArgs e )
+        private string parseLanguages(ManifestEventArgs e)
         {
             List<Object> tracks = e.Flavors;
             String languages = "";
@@ -569,7 +612,7 @@ namespace Player
         void media_BitratesReady(object sender, ManifestEventArgs e)
         {
             List<TrackInfo> tracks = e.Flavors.Cast<TrackInfo>().ToList();
-            String bitrates = "";            
+            String bitrates = "";
             if (tracks != null)
             {
                 foreach (TrackInfo ti in tracks)
@@ -578,19 +621,19 @@ namespace Player
                     if (ti.Attributes.ContainsKey("MaxHeight"))
                     {
                         Int32.TryParse(ti.Attributes["MaxHeight"], out height);
-                    }                    
+                    }
                     int width = 0;
                     if (ti.Attributes.ContainsKey("MaxWidth"))
                     {
                         Int32.TryParse(ti.Attributes["MaxWidth"], out width);
-                    }                    
+                    }
                     bitrates += "{\"type\":\"video/ism\",\"assetid\":" + "\"ism_" + ti.Index + "\"" + ",\"bandwidth\":" + ti.Bitrate + ",\"height\":" + height + ",\"width\":" + width + "}";
                     if (tracks.IndexOf(ti) < tracks.Count - 1)
                     {
                         bitrates += ",";
                     }
                 }
-            }            
+            }
             bitrates = "{\"flavors\":[" + bitrates + "]}";
             SendEvent("flavorsListChanged", bitrates);
         }
@@ -607,7 +650,7 @@ namespace Player
 
         void media_TextTrackLoaded(object sender, SourceEventArgs e)
         {
-            SendEvent("textTrackSelected", "{\"index\":" + e.NewIndex + ", \"ttml\":\"" +  HttpUtility.HtmlEncode( Uri.EscapeUriString (e.Text)) + "\"}");
+            SendEvent("textTrackSelected", "{\"index\":" + e.NewIndex + ", \"ttml\":\"" + HttpUtility.HtmlEncode(Uri.EscapeUriString(e.Text)) + "\"}");
         }
 
         #endregion
@@ -615,9 +658,9 @@ namespace Player
         #region JS Interface
 
         [ScriptableMember]
-        public void addJsListener(string bindName,string callback)
+        public void addJsListener(string bindName, string callback)
         {
-            if (!mapJSBindings.ContainsKey(bindName) )
+            if (!mapJSBindings.ContainsKey(bindName))
             {
                 mapJSBindings[bindName] = new List<String>();
             }
@@ -627,11 +670,11 @@ namespace Player
         [ScriptableMember]
         public void removeJsListener(string bindName, string callback)
         {
-            if ( mapJSBindings.ContainsKey(bindName) )
+            if (mapJSBindings.ContainsKey(bindName))
             {
                 mapJSBindings[bindName].Remove(callback);
             }
-           
+
         }
 
         [ScriptableMember]
@@ -646,10 +689,10 @@ namespace Player
         [ScriptableMember]
         public void playMedia()
         {
-            logger.info("method:play " + media.CurrentState );
+            logger.info("method:play " + media.CurrentState);
 
             // sometimes people forget to call load() first
-            if (_shouldReload || ( !_enableMultiCastPlayer && (media.CurrentState == MediaElementState.Closed || (_mediaUrl != "" && media.Source == null))))
+            if (_shouldReload || (!_enableMultiCastPlayer && (media.CurrentState == MediaElementState.Closed || (_mediaUrl != "" && media.Source == null))))
             {
                 _isAttemptingToPlay = true;
                 _shouldReload = false;
@@ -668,7 +711,7 @@ namespace Player
                 {
                     reloadMedia();
                 }
-                
+
                 media.Play();
                 _isEnded = false;
                 _isPaused = false;
@@ -688,9 +731,9 @@ namespace Player
             {
                 _shouldReload = true;
             }
-            media.Pause();    
+            media.Pause();
             StopTimer();
-          
+
         }
 
         [ScriptableMember]
@@ -707,7 +750,7 @@ namespace Player
             if (!String.IsNullOrEmpty(_licenseURL))
             {
                 media.LicenseAcquirer = new customLicenseAcquirer("media");
-                media.LicenseAcquirer.AcquireLicenseCompleted += new EventHandler<AcquireLicenseCompletedEventArgs>(acquirer_Completed);                 
+                media.LicenseAcquirer.AcquireLicenseCompleted += new EventHandler<AcquireLicenseCompletedEventArgs>(acquirer_Completed);
                 // Set the License URI to proper License Server address.
                 /*partnerId - mandatory
                 ks - mandatory
@@ -743,9 +786,9 @@ namespace Player
             logger.info("method:reloadMedia " + media.CurrentState);
             if (_enableMultiCastPlayer)
             {
-              cleanup();
-               
-               InitPlayer();
+                cleanup();
+
+                InitPlayer();
             }
         }
 
@@ -768,7 +811,7 @@ namespace Player
 
             media.Volume = volume;
 
-            SendEvent("volumechange",volume.ToString());
+            SendEvent("volumechange", volume.ToString());
         }
 
         [ScriptableMember]
@@ -785,7 +828,7 @@ namespace Player
             {
                 SendEvent("unmute");
             }
-            
+
 
         }
 
@@ -795,12 +838,12 @@ namespace Player
             logger.info("method:setCurrentTime: " + position.ToString());
             int seconds = Convert.ToInt32(position);
             TimeSpan newPosition = TimeSpan.FromSeconds(seconds) + media.StartPosition;
-            SendEvent("playerSeekStart","0");
+            SendEvent("playerSeekStart", "0");
             media.Position = newPosition;
             //Send the event here so if we are paused the event will still be dispatched
             var time = CurrentTimeInSeconds;
             //WriteDebug("playerUpdatePlayhead " + TimeSpan.FromSeconds(time));
-            SendEvent("playerUpdatePlayhead", time.ToString());            
+            SendEvent("playerUpdatePlayhead", time.ToString());
             SendEvent("playerSeekEnd", time.ToString());
         }
 
@@ -823,7 +866,7 @@ namespace Player
         {
             if (media is SmoothStreamingElement)
             {
-                (media as SmoothStreamingElement).selectTrack( trackIndex );
+                (media as SmoothStreamingElement).selectTrack(trackIndex);
             }
 
         }
@@ -833,7 +876,7 @@ namespace Player
         {
             if (media is SmoothStreamingElement)
             {
-                (media as SmoothStreamingElement).selectAudioTrack(trackIndex);    
+                (media as SmoothStreamingElement).selectAudioTrack(trackIndex);
                 SendEvent("audioTrackSelected", "{\"index\":" + (media as SmoothStreamingElement).getCurrentAudioIndex() + "}");
             }
         }
@@ -850,7 +893,8 @@ namespace Player
         [ScriptableMember]
         public bool StartSeekToLive
         {
-            get {
+            get
+            {
                 if (media is SmoothStreamingElement)
                 {
                     (media as SmoothStreamingElement).element.StartSeekToLive();
@@ -860,7 +904,7 @@ namespace Player
         }
 
         [ScriptableMember]
-        public void stretchFill() 
+        public void stretchFill()
         {
             if (media is MulticastPlayer)
             {
@@ -870,7 +914,7 @@ namespace Player
         }
         #endregion
 
-        
+
         [ScriptableMember]
         public double MulticastAverageBitRate
         {
@@ -883,7 +927,7 @@ namespace Player
                 return 0;
             }
         }
-        
+
         [ScriptableMember]
         public double CurrentTimeInSeconds
         {
@@ -920,14 +964,15 @@ namespace Player
             }
             Dictionary<string, string> myDictionary = media.GetDiagnostics() as Dictionary<string, string>;
             string diagDataString = "{";
-            foreach (KeyValuePair<string, string> diagData in myDictionary) {                
-                diagDataString += "\""+ diagData.Key+"\":\""+diagData.Value+"\",";//,\"assetid\":" + "\"ism_" + ti.Index + "\"" + ",\"bandwidth\":" + ti.Bitrate + ",\"height\":" + height + ",\"width\":" + width + "}";
-                
+            foreach (KeyValuePair<string, string> diagData in myDictionary)
+            {
+                diagDataString += "\"" + diagData.Key + "\":\"" + diagData.Value + "\",";//,\"assetid\":" + "\"ism_" + ti.Index + "\"" + ",\"bandwidth\":" + ti.Bitrate + ",\"height\":" + height + ",\"width\":" + width + "}";
+
             }
-            diagDataString= diagDataString.Remove(diagDataString.Length - 1);
+            diagDataString = diagDataString.Remove(diagDataString.Length - 1);
             diagDataString += "}";
             return diagDataString;
-            
+
         }
     }
 }

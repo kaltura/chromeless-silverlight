@@ -86,6 +86,8 @@ namespace Player
                 newStreams.Add(newAudioStream);
                 // replace old streams by new ones
                 segment.SelectStreamsAsync(newStreams);
+                //Clear the audio buffer to enable immediate switching of language track
+                this.element.FlushBuffers(TimeSpan.Zero, true, false);
             } 
         }
 

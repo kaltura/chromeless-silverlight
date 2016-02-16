@@ -290,8 +290,6 @@ namespace Player
                     }
                 }
 
-                //If index is set on audio track then order by index as player will respect the order
-                audioTracks = audioTracks.OrderBy(o => o.Attributes.ContainsKey("Index") ? o.Attributes["Index"] : "").ToList();
                 if (MediaOpened != null)
                 {
                     MediaOpened(sender, e);

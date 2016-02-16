@@ -41,6 +41,8 @@ namespace Player
         private bool _isPaused;
         private string _playerId;
         private double _lastDuration = 0;
+        private int _defaultAudioTrack = 0;
+        private bool playAfterDefaultAudioChange = false;
 
         private Dictionary<String, List<String>> mapJSBindings = new Dictionary<string, List<String>>();
         private double _bufferedTime;
@@ -117,12 +119,8 @@ namespace Player
 
         }
 
-
-
         private void ChoosePlayer()
         {
-
-
             progressive_media.Visibility = System.Windows.Visibility.Collapsed;
             SmoothStream_media.Visibility = System.Windows.Visibility.Collapsed;
             if (_enableSmoothStreamPlayer)
@@ -156,13 +154,21 @@ namespace Player
             tb_debug.IsEnabled = false;
         }
 
-
         /// <summary>
         /// Init the media we should play
         /// </summary>
         private void InitMedia()
         {
-            media.AutoPlay = _autoplay;
+            if (_defaultAudioTrack != 0)
+            {
+                //Keep autoplay value to resume playback after audio switch
+                this.playAfterDefaultAudioChange = this._autoplay;
+                //Load media to be able to get manifest info and change track
+                this._preload = "auto";
+            }
+            else {
+                media.AutoPlay = _autoplay;
+            }
             media.Volume = _volume;
             if (!String.IsNullOrEmpty(_mediaUrl))
             {
@@ -187,7 +193,6 @@ namespace Player
             _timer.Stop();
 
         }
-
 
         /// <summary>
         /// Handle all the external params in order to load the player
@@ -257,6 +262,11 @@ namespace Player
                 _enableSmoothStreamPlayer = true;
             }
 
+            if (initParams.ContainsKey("defaultAudioTrack"))
+            {
+                Int32.TryParse(initParams["defaultAudioTrack"], out _defaultAudioTrack);
+            }
+
             if (initParams.ContainsKey("multicastPlayer"))
             {
                 _enableMultiCastPlayer = true;
@@ -297,6 +307,7 @@ namespace Player
                 ssMedia.SourceChanged += media_SourceChanged;
                 ssMedia.MarkerReached += media_MarkerReached;
                 ssMedia.TextTrackLoaded += media_TextTrackLoaded;
+                ssMedia.CurrentAudioStreamChanged += media_CurrentAudioStreamChanged;
             }
 
             if (media is MulticastPlayer)
@@ -310,6 +321,18 @@ namespace Player
             {
                 media.MouseLeftButtonUp += media_MouseLeftButtonUp;
             }
+        }
+
+        private void media_CurrentAudioStreamChanged(object sender, StreamUpdatedListEventArgs e)
+        {
+            if (playAfterDefaultAudioChange)
+            {
+                //If autoplay was set and we had to set default language on start then 
+                //continue play now and set the flag to false
+                this.playAfterDefaultAudioChange = false;
+                SmoothStream_media.Play();
+            }
+            SendEvent("audioTrackSelected", "{\"index\":" + (media as SmoothStreamingElement).getCurrentAudioIndex() + "}");
         }
 
         void MainPage_ReceivedID3Tag(string id3Tag)
@@ -439,14 +462,17 @@ namespace Player
                 {
                     // restore position		
                     SmoothStream_media.Position = LastPosition;
-
                 }
-
             }
             else
             {
                 this.LastSmoothStreamingSource = SmoothStream_media.SmoothStreamingSource;
 
+            }
+            if (_defaultAudioTrack != 0)
+            {
+                //If we have default audio track other then 0 then request change after media is opened
+                selectAudioTrack(_defaultAudioTrack);
             }
             _lastDuration = media.NaturalDuration.TimeSpan.TotalSeconds;
             SendEvent("durationChange", media.NaturalDuration.TimeSpan.TotalSeconds.ToString());
@@ -460,14 +486,26 @@ namespace Player
             {
                 if (m_mediaFailureRetryCount < maxMediaFailureRetries)
                 {
+                    logger.info("Encountered error 3050 Corrupt H264 data encountered, retrying playback");
                     m_mediaFailureRetryCount++;
 
                     SmoothStream_media.Source = null;
-                    SmoothStream_media.AutoPlay = true;
+                    //If we try to recover stream and we have default audio other then 0
+                    //then don't set autoplay just yet, we will change it on media opened 
+                    //and continue playback after change
+                    if (_defaultAudioTrack != 0)
+                    {
+                        this.playAfterDefaultAudioChange = true;
+                    }
+                    else {
+                        SmoothStream_media.AutoPlay = true;                        
+                    }
                     SmoothStream_media.SmoothStreamingSource = new Uri(LastSmoothStreamingSource.AbsoluteUri);
                     this._autoplay = true;
                     this._isRetry = true;
-                    SmoothStream_media.Play();
+                    if (_defaultAudioTrack == 0) {
+                        SmoothStream_media.Play();
+                    }
                 }
             }
             else
@@ -584,20 +622,26 @@ namespace Player
             SendEvent("textTracksReceived", parseLanguages(e));
         }
 
+
+
+
+
         /**
-         * parse given args to languages string
-         * */
+* parse given args to languages string
+* */
         private string parseLanguages(ManifestEventArgs e)
         {
             List<Object> tracks = e.Flavors;
             String languages = "";
             if (tracks != null)
             {
+                string name = "";
                 string langName = "";
                 for (int i = 0; i < tracks.Count; i++)
                 {
-                    ((StreamInfo)tracks.ElementAt(i)).Attributes.TryGetValue("Name", out langName);
-                    languages += "{\"label\":\"" + langName + "\",\"index\":" + i + "}";
+                    ((StreamInfo)tracks.ElementAt(i)).Attributes.TryGetValue("Name", out name);
+                    ((StreamInfo)tracks.ElementAt(i)).Attributes.TryGetValue("Language", out langName);
+                    languages += "{\"label\":\"" + name + "\",\"index\":" + i + ",\"language\":\"" + langName + "\"}";
                     if (i < tracks.Count - 1)
                     {
                         languages += ",";
@@ -653,10 +697,12 @@ namespace Player
             SendEvent("textTrackSelected", "{\"index\":" + e.NewIndex + ", \"ttml\":\"" + HttpUtility.HtmlEncode(Uri.EscapeUriString(e.Text)) + "\"}");
         }
 
+
+
+
+
         #endregion
-
         #region JS Interface
-
         [ScriptableMember]
         public void addJsListener(string bindName, string callback)
         {
@@ -711,8 +757,12 @@ namespace Player
                 {
                     reloadMedia();
                 }
-
-                media.Play();
+                //If we're still waiting for initial audio language to change then mask play 
+                //reuest as it will happen once change is completed
+                if (!playAfterDefaultAudioChange)
+                {
+                    media.Play();
+                }
                 _isEnded = false;
                 _isPaused = false;
             }
@@ -751,6 +801,12 @@ namespace Player
             {
                 media.LicenseAcquirer = new customLicenseAcquirer("media");
                 media.LicenseAcquirer.AcquireLicenseCompleted += new EventHandler<AcquireLicenseCompletedEventArgs>(acquirer_Completed);
+
+
+
+
+
+
                 // Set the License URI to proper License Server address.
                 /*partnerId - mandatory
                 ks - mandatory
@@ -877,7 +933,6 @@ namespace Player
             if (media is SmoothStreamingElement)
             {
                 (media as SmoothStreamingElement).selectAudioTrack(trackIndex);
-                SendEvent("audioTrackSelected", "{\"index\":" + (media as SmoothStreamingElement).getCurrentAudioIndex() + "}");
             }
         }
 
@@ -912,8 +967,9 @@ namespace Player
             }
 
         }
-        #endregion
 
+
+        #endregion
 
         [ScriptableMember]
         public double MulticastAverageBitRate

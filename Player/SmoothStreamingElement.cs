@@ -85,10 +85,19 @@ namespace Player
                 // add a new audio stream
                 newStreams.Add(newAudioStream);
                 // replace old streams by new ones
+
+                this.element.ManifestInfo.SelectStreamsCompleted += ManifestInfo_SelectStreamsCompleted;
                 segment.SelectStreamsAsync(newStreams);
-                //Clear the audio buffer to enable immediate switching of language track
-                this.element.FlushBuffers(TimeSpan.Zero, true, false);
             } 
+        }
+
+        private void ManifestInfo_SelectStreamsCompleted(object sender, StreamUpdatedListEventArgs e)
+        {
+            this.element.ManifestInfo.SelectStreamsCompleted -= ManifestInfo_SelectStreamsCompleted;
+            if (CurrentAudioStreamChanged != null)
+            {
+                CurrentAudioStreamChanged(sender, e);
+            }
         }
 
         public void selectTextTrack(int trackIndex)
@@ -229,6 +238,8 @@ namespace Player
         
         public event EventHandler<SourceEventArgs> SourceChanged;
 
+        public event EventHandler<StreamUpdatedListEventArgs> CurrentAudioStreamChanged;
+
         public event EventHandler<TimelineMarkerRoutedEventArgs> MarkerReached;
    
 
@@ -250,18 +261,14 @@ namespace Player
             {
                 this.element.StartSeekToLive();                
             }
-            if (MediaOpened != null)
-            {
-                MediaOpened(sender, e);
-            }
-
+            
             foreach (SegmentInfo segment in this.element.ManifestInfo.Segments)
             {                
                 audioTracks = new List<StreamInfo>();
                 textTracks = new List<StreamInfo>();
                 IList<StreamInfo> streamInfoList = segment.AvailableStreams;
                 List<StreamInfo> selectStreams = segment.SelectedStreams.ToList<StreamInfo>();
-
+                
                 foreach (StreamInfo stream in streamInfoList)
                 {
                     if (stream.Type == MediaStreamType.Video)
@@ -277,17 +284,23 @@ namespace Player
                         audioTracks.Add(stream);
                     }
                     //subtitles
-                    else if (stream.Type == System.Windows.Media.MediaStreamType.Script && stream.Subtype == "CAPT")
+                    else if (stream.Type == MediaStreamType.Script && stream.Subtype == "CAPT")
                     {
                         textTracks.Add(stream); 
                     }
                 }
-                ManifestEventArgs audioArgs = new ManifestEventArgs(audioTracks.ToList<Object>());
-                AudioTracksReady(this, audioArgs);
 
+                //If index is set on audio track then order by index as player will respect the order
+                audioTracks = audioTracks.OrderBy(o => o.Attributes.ContainsKey("Index") ? o.Attributes["Index"] : "").ToList();
+                if (MediaOpened != null)
+                {
+                    MediaOpened(sender, e);
+                }
+                ManifestEventArgs audioArgs = new ManifestEventArgs(audioTracks.ToList<Object>());                
+                AudioTracksReady(this, audioArgs);
+                
                 ManifestEventArgs textArgs = new ManifestEventArgs(textTracks.ToList<Object>());
                 TextTracksReady(this, textArgs);
-
             }       
         }
 

@@ -41,7 +41,8 @@ namespace Player
         private bool _isPaused;
         private string _playerId;
         private double _lastDuration = 0;
-        private int _defaultAudioTrack = 0;
+        private int _defaultAudioTrack = -1;
+        private int _waitForDefaultAudioTrackTimeout = 2000;
         private bool playAfterDefaultAudioChange = false;
 
         private Dictionary<String, List<String>> mapJSBindings = new Dictionary<string, List<String>>();
@@ -159,7 +160,7 @@ namespace Player
         /// </summary>
         private void InitMedia()
         {
-            if (_defaultAudioTrack != 0)
+            if (_defaultAudioTrack != -1)
             {
                 //Keep autoplay value to resume playback after audio switch
                 this.playAfterDefaultAudioChange = this._autoplay;
@@ -266,6 +267,11 @@ namespace Player
             {
                 Int32.TryParse(initParams["defaultAudioTrack"], out _defaultAudioTrack);
             }
+
+            if (initParams.ContainsKey("waitForDefaultAudioTrackTimeout"))
+            {
+                Int32.TryParse(initParams["waitForDefaultAudioTrackTimeout"], out _waitForDefaultAudioTrackTimeout);
+            }            
 
             if (initParams.ContainsKey("multicastPlayer"))
             {
@@ -469,10 +475,14 @@ namespace Player
                 this.LastSmoothStreamingSource = SmoothStream_media.SmoothStreamingSource;
 
             }
-            if (_defaultAudioTrack != 0)
+            if (_defaultAudioTrack != -1)
             {
                 //If we have default audio track other then 0 then request change after media is opened
                 selectAudioTrack(_defaultAudioTrack);
+                if (_waitForDefaultAudioTrackTimeout > 0)
+                {
+                    Thread.Sleep(_waitForDefaultAudioTrackTimeout);
+                }
             }
             _lastDuration = media.NaturalDuration.TimeSpan.TotalSeconds;
             SendEvent("durationChange", media.NaturalDuration.TimeSpan.TotalSeconds.ToString());
@@ -493,7 +503,7 @@ namespace Player
                     //If we try to recover stream and we have default audio other then 0
                     //then don't set autoplay just yet, we will change it on media opened 
                     //and continue playback after change
-                    if (_defaultAudioTrack != 0)
+                    if (_defaultAudioTrack != -1)
                     {
                         this.playAfterDefaultAudioChange = true;
                     }
@@ -503,7 +513,7 @@ namespace Player
                     SmoothStream_media.SmoothStreamingSource = new Uri(LastSmoothStreamingSource.AbsoluteUri);
                     this._autoplay = true;
                     this._isRetry = true;
-                    if (_defaultAudioTrack == 0) {
+                    if (_defaultAudioTrack == -1) {
                         SmoothStream_media.Play();
                     }
                 }

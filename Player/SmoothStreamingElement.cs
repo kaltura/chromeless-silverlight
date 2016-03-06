@@ -48,7 +48,7 @@ namespace Player
             this.element.MouseLeftButtonUp += element_MouseLeftButtonUp;
             this.element.MarkerReached += element_MarkerReached;
 
-             this.element.PlaybackTrackChanged += element_PlaybackTrackChanged;
+            this.element.PlaybackTrackChanged += element_PlaybackTrackChanged;
             this.element.ManifestReady += element_ManifestReady;
 
         }
@@ -85,15 +85,17 @@ namespace Player
                 // add a new audio stream
                 newStreams.Add(newAudioStream);
                 // replace old streams by new ones
-
+                
                 this.element.ManifestInfo.SelectStreamsCompleted += ManifestInfo_SelectStreamsCompleted;
                 segment.SelectStreamsAsync(newStreams);
+                 this.element.FlushBuffers(new TimeSpan(0), true, true);
             } 
         }
 
         private void ManifestInfo_SelectStreamsCompleted(object sender, StreamUpdatedListEventArgs e)
         {
             this.element.ManifestInfo.SelectStreamsCompleted -= ManifestInfo_SelectStreamsCompleted;
+            this.element.FlushBuffers(new TimeSpan(0), true, true);            
             if (CurrentAudioStreamChanged != null)
             {
                 CurrentAudioStreamChanged(sender, e);
@@ -252,7 +254,7 @@ namespace Player
         }
 
         void element_ManifestReady(object sender, EventArgs e)
-        {            
+        {   
         }
 
         void element_MediaOpened(object sender, RoutedEventArgs e)
@@ -289,7 +291,7 @@ namespace Player
                         textTracks.Add(stream); 
                     }
                 }
-
+                                
                 if (MediaOpened != null)
                 {
                     MediaOpened(sender, e);
@@ -299,7 +301,7 @@ namespace Player
                 
                 ManifestEventArgs textArgs = new ManifestEventArgs(textTracks.ToList<Object>());
                 TextTracksReady(this, textArgs);
-            }       
+            }            
         }
 
         void element_MarkerReached(object sender, TimelineMarkerRoutedEventArgs e)

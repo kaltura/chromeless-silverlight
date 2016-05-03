@@ -307,5 +307,10 @@ namespace Player
         {
             throw new NotImplementedException();
         }
+
+        public Double getCurrentBufferLength()
+        {
+            return 0;
+        }
     }
 }

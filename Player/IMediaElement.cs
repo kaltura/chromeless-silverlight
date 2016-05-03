@@ -60,6 +60,8 @@ namespace Player
 
         void Pause();
 
+        Double getCurrentBufferLength();
+        
         LicenseAcquirer LicenseAcquirer { get; set; }
 
         Uri Source { get; set; }
@@ -84,6 +86,7 @@ namespace Player
         public static readonly string InputFrameRate = "InputFps";
         public static readonly string PacketLoss = "PacketLoss";
         public static readonly string PacketRate = "PacketRate";
+        public static readonly string VideoBuffer = "VideoBuffer";
     }
     
     static internal class DiagnosticsLiveConstants
@@ -93,6 +96,6 @@ namespace Player
         public static readonly string LiveBackOff = "LiveBackOff";
         public static readonly string LivePlaybackOffset = "LivePlaybackOffset";
         public static readonly string LivePlaybackStartPosition = "LivePlaybackStartPosition";
-        public static readonly string LivePosition = "LivePosition";        
+        public static readonly string LivePosition = "LivePosition";
     }
 }

@@ -152,7 +152,7 @@ namespace Player
                         diags[DiagnosticsConstants.InputFrameRate] = info.inputFrameRate.ToString("N2");
                         diags[DiagnosticsConstants.MulticastAddress] = info.streamAdress;
                         diags[DiagnosticsConstants.CurrentBitrate] = (info.currentBitRate / 1024).ToString("N2") + " Kbps";
-                        
+                        diags[DiagnosticsConstants.VideoBuffer] = info.videoBuffer.TotalSeconds.ToString("N2");
                         int droppedPackets = (int)(info.videoLostPackets + info.audioLostPackets),
                             receivedPackets = (int)(info.videoTotalPackets + info.audioTotalPackets);
                         double dropRate = receivedPackets > 0 ? droppedPackets / (double)receivedPackets : 0.0;
@@ -171,13 +171,21 @@ namespace Player
 
         public new Double getCurrentBufferLength()
         {
-            Dictionary<string, string> myDictionary = GetDiagnostics() as Dictionary<string, string>;
-            var videoBuffer = myDictionary[DiagnosticsConstants.VideoBuffer];
-            Double bufferLength;
-            if (Double.TryParse(videoBuffer, out bufferLength))
+            var myDictionary = GetDiagnostics() as Dictionary<string, string>;
+            if (myDictionary != null)
             {
-                return bufferLength;
-            } else
+                var videoBuffer = myDictionary[DiagnosticsConstants.VideoBuffer];
+                Double bufferLength;
+                if (Double.TryParse(videoBuffer, out bufferLength))
+                {
+                    return bufferLength;
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+            else
             {
                 return 0;
             }

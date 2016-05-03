@@ -1040,5 +1040,21 @@ namespace Player
             return diagDataString;
 
         }
+
+        [ScriptableMember]
+        public string getCurrentBufferLength()
+        {
+            if (media == null)
+            {
+                return null;
+            }
+            Double bufferLength = 0;
+            if (media.GetType().GetMethod("getCurrentBufferLength") != null)
+            {
+                bufferLength = media.getCurrentBufferLength();
+            }            
+            return bufferLength.ToString();
+
+        }
     }
 }

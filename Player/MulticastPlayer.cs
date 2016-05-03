@@ -168,5 +168,20 @@ namespace Player
             }   
             return diags;
         }
+
+        public new Double getCurrentBufferLength()
+        {
+            Dictionary<string, string> myDictionary = GetDiagnostics() as Dictionary<string, string>;
+            var videoBuffer = myDictionary[DiagnosticsConstants.VideoBuffer];
+            Double bufferLength;
+            if (Double.TryParse(videoBuffer, out bufferLength))
+            {
+                return bufferLength;
+            } else
+            {
+                return 0;
+            }
+
+        }
     }
 }

@@ -672,5 +672,10 @@ namespace Player
             }
             return diags;
         }
+
+        public Double getCurrentBufferLength()
+        {
+            return 0;
+        }
     }
 }

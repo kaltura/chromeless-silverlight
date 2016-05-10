@@ -586,7 +586,7 @@ namespace Player
                     SendEvent("playerPaused");
                     break;
                 case MediaElementState.Buffering:
-                    SendEvent("progress");
+                    SendEvent("buffering");
                     break;
                 case MediaElementState.Individualizing:
                     SendEvent("individualizing");
